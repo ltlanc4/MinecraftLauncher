@@ -132,7 +132,7 @@ namespace MinecraftLauncher
                     {
                         txtGameVersion.Text = $"{_serverManifest.Loader} {_serverManifest.Version}";
                         txtTotalMods.Text =
-                            $"Đã kiểm tra đồng bộ: {_serverManifest.TotalMods} Modpacks hoạt động.";
+                            $"Đã kiểm tra đồng bộ: {_serverManifest.TotalMods} Mods hoạt động.";
                         icModsList.ItemsSource = _serverManifest.Mods;
 
                         CheckInstallationStatus();
