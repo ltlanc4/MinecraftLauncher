@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Windows;
 
 namespace MinecraftLauncher
@@ -16,10 +17,20 @@ namespace MinecraftLauncher
             Application.Current.Dispatcher.Invoke(() =>
             {
                 var mainWindow = Application.Current.MainWindow;
-                if (mainWindow == null) return;
+                
+                // Tránh lỗi Crash nếu cửa sổ chính chưa kịp hiện lên
+                if (mainWindow == null || !mainWindow.IsVisible) return;
 
                 var notification = new NotificationWindow(title, message);
+                
+                // LIÊN KẾT THÔNG BÁO VỚI CỬA SỔ CHÍNH
                 notification.Owner = mainWindow;
+                
+                // FIX LỖI ĐÈ ỨNG DỤNG KHÁC: Ép buộc tắt chế độ "Luôn nổi trên cùng"
+                notification.Topmost = false;
+                
+                // ẨN ICON: Không hiển thị icon thông báo dưới thanh Taskbar của Windows
+                notification.ShowInTaskbar = false;
 
                 notification.Closed += (s, e) =>
                 {
