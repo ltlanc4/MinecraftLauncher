@@ -1,16 +1,14 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
 using CmlLib.Core;
 using CmlLib.Core.Auth;
-using System.Windows.Threading;
 
 namespace MinecraftLauncher
 {
@@ -18,10 +16,15 @@ namespace MinecraftLauncher
     {
         private string _username; 
         private static readonly HttpClient _httpClient = new HttpClient();
+        
+        // CẤU HÌNH API CỦA NODE.JS SERVER
         private readonly string API_SERVER_URL = "http://localhost:3000";
+        private readonly string SESSION_FILE = "session_data.json"; 
+        
         private ServerInfoResponse _serverManifest; 
         private bool _isInstalled = false; 
 
+        // BIẾN LƯU TRỮ ĐƯỜNG DẪN CÀI ĐẶT
         private string _minecraftDirectory;
         private readonly string PATH_CONFIG_FILE = "launcher_path.txt"; 
 
@@ -29,7 +32,13 @@ namespace MinecraftLauncher
         {
             InitializeComponent();
             _username = username;
+            
+            // Cập nhật tên ở màn hình Trang Chủ
             txtUsername.Text = username.ToUpper();
+            
+            // Cập nhật tên ở màn hình Thông Tin Nhân Vật
+            if (txtProfileDisplayUsername != null) txtProfileDisplayUsername.Text = username;
+            if (txtProfileUsernameValue != null) txtProfileUsernameValue.Text = username;
             
             LoadMinecraftPath();
         }
@@ -99,7 +108,14 @@ namespace MinecraftLauncher
                 if (response.IsSuccessStatusCode)
                 {
                     string responseString = await response.Content.ReadAsStringAsync();
-                    _serverManifest = JsonSerializer.Deserialize<ServerInfoResponse>(responseString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    
+                    var jsonOptions = new JsonSerializerOptions 
+                    { 
+                        PropertyNameCaseInsensitive = true,
+                        NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
+                    };
+                    
+                    _serverManifest = JsonSerializer.Deserialize<ServerInfoResponse>(responseString, jsonOptions);
 
                     if (_serverManifest != null && _serverManifest.Success)
                     {
@@ -114,10 +130,10 @@ namespace MinecraftLauncher
                 txtGameVersion.Text = "Cấu hình Offline";
                 txtTotalMods.Text = "Không thể tải danh sách Mod.";
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                txtGameVersion.Text = "Lỗi kết nối";
-                txtTotalMods.Text = "Mất kết nối máy chủ API.";
+                txtGameVersion.Text = "Lỗi hệ thống";
+                txtTotalMods.Text = $"Chi tiết lỗi: {ex.Message}";
             }
         }
 
@@ -166,7 +182,7 @@ namespace MinecraftLauncher
             });
         }
 
-        // ================= CƠ CHẾ ĐỒNG BỘ MODS =================
+        // ================= CƠ CHẾ ĐỒNG BỘ MODS (DELTA SYNC) =================
         private async Task SyncModsAsync(string modsDirectory)
         {
             if (_serverManifest == null || _serverManifest.Mods == null || _serverManifest.Mods.Count == 0)
@@ -210,9 +226,9 @@ namespace MinecraftLauncher
                         byte[] fileBytes = await _httpClient.GetByteArrayAsync(fileUrl);
                         await File.WriteAllBytesAsync(savePath, fileBytes);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
-                        Dispatcher.Invoke(() => NotificationManager.Show("LỖI TẢI MOD", $"Không thể tải {modFile}: {ex.Message}"));
+                        // Bỏ qua hiển thị thông báo lỗi từng mod để tránh gián đoạn
                     }
 
                     Dispatcher.Invoke(() => { pbDownload.Value = i + 1; });
@@ -225,7 +241,7 @@ namespace MinecraftLauncher
         {
             if (_serverManifest == null)
             {
-                NotificationManager.Show("LỖI KẾT NỐI", "Chưa lấy được cấu hình phiên bản từ máy chủ!");
+                MessageBox.Show("Chưa lấy được cấu hình phiên bản từ máy chủ!");
                 return;
             }
 
@@ -255,7 +271,6 @@ namespace MinecraftLauncher
 
                 if (!_isInstalled)
                 {
-                    // TỰ ĐỘNG LẤY FILE JSON TỪ FABRIC META API
                     if (targetVersion.StartsWith("fabric-loader"))
                     {
                         string versionDir = Path.Combine(path.Versions, targetVersion);
@@ -284,71 +299,272 @@ namespace MinecraftLauncher
                         btnPlay.Content = "ĐANG TẢI...";
                         txtDownloadStatus.Text = "Đang cài đặt thư viện Minecraft Core và Fabric...";
                     });
-                    
-                    var process = await launcher.CreateProcessAsync(targetVersion, new MLaunchOption
-                    {
-                        Session = MSession.GetOfflineSession(_username), 
-                        MaximumRamMb = 4096 
-                    });
-
-                    Dispatcher.Invoke(() => txtDownloadStatus.Text = "Đang đồng bộ Mods từ Máy chủ...");
-                    string modsDir = Path.Combine(path.BasePath, "mods");
-                    await SyncModsAsync(modsDir);
-
-                    Dispatcher.Invoke(() => txtDownloadStatus.Text = "Cài đặt hoàn tất!");
-                    await Task.Delay(1000);
-
-                    _isInstalled = true;
-                    DownloadProgressContainer.Visibility = Visibility.Collapsed;
-                    btnPlay.IsEnabled = true;
-                    btnPlay.Content = "KHỞI ĐỘNG";
-                    NotificationManager.Show("CÀI ĐẶT XONG", "Trò chơi đã sẵn sàng. Bạn có thể nhấn Khởi Động!");
                 }
                 else
                 {
                     Dispatcher.Invoke(() => {
-                        btnPlay.Content = "ĐANG VÀO GAME...";
+                        btnPlay.Content = "ĐANG KIỂM TRA...";
                         txtDownloadStatus.Text = "Đang kiểm tra cập nhật tài nguyên...";
                     });
-                    
-                    var process = await launcher.CreateProcessAsync(targetVersion, new MLaunchOption
-                    {
-                        Session = MSession.GetOfflineSession(_username), 
-                        MaximumRamMb = 4096 
-                    });
-
-                    string modsDir = Path.Combine(path.BasePath, "mods");
-                    await SyncModsAsync(modsDir);
-
-                    Dispatcher.Invoke(() => txtDownloadStatus.Text = "Đang khởi động tiến trình trò chơi...");
-                    await Task.Delay(500);
-                    
-                    process.Start(); 
-
-                    DownloadProgressContainer.Visibility = Visibility.Collapsed;
-                    btnPlay.IsEnabled = true;
-                    btnPlay.Content = "ĐANG CHƠI";
-                    NotificationManager.Show("VÀO GAME", "Minecraft đang khởi động. Launcher sẽ tự thu nhỏ.");
-                    
-                    this.WindowState = WindowState.Minimized; 
                 }
+
+                // KẾT NỐI TRỰC TIẾP BẰNG IP SỐ VÀ PORT GỐC 
+                var launchOption = new MLaunchOption
+                {
+                    Session = MSession.GetOfflineSession(_username), 
+                    MaximumRamMb = 4096, 
+                    ServerIp = string.IsNullOrEmpty(_serverManifest.Server_Ip) ? "127.0.0.1" : _serverManifest.Server_Ip,
+                    ServerPort = _serverManifest.Server_Port > 0 ? _serverManifest.Server_Port : 25565
+                };
+
+                var process = await launcher.CreateProcessAsync(targetVersion, launchOption);
+
+                Dispatcher.Invoke(() => txtDownloadStatus.Text = "Đang đồng bộ Mods từ Máy chủ...");
+                string modsDir = Path.Combine(path.BasePath, "mods");
+                await SyncModsAsync(modsDir);
+
+                Dispatcher.Invoke(() => txtDownloadStatus.Text = "Đang khởi động trò chơi...");
+                await Task.Delay(500);
+
+                process.EnableRaisingEvents = true; 
+                process.Exited += (s, ev) =>
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        btnPlay.IsEnabled = true;
+                        btnPlay.Content = "KHỞI ĐỘNG";
+                        this.WindowState = WindowState.Normal;
+                    });
+                };
+                
+                process.Start(); 
+
+                DownloadProgressContainer.Visibility = Visibility.Collapsed;
+                _isInstalled = true; 
+
+                btnPlay.Content = "ĐANG CHƠI";
+                btnPlay.IsEnabled = false; 
+                
+                this.WindowState = WindowState.Minimized; 
             }
             catch (Exception ex)
             {
-                NotificationManager.Show("LỖI HỆ THỐNG", ex.Message);
+                MessageBox.Show("LỖI HỆ THỐNG: " + ex.Message);
                 DownloadProgressContainer.Visibility = Visibility.Collapsed;
                 btnPlay.IsEnabled = true;
                 btnPlay.Content = _isInstalled ? "KHỞI ĐỘNG" : "CÀI ĐẶT";
             }
         }
 
-        // ================= CÁC SỰ KIỆN GIAO DIỆN KHÁC =================
+
+        // ===============================================================
+        // CÁC HÀM XỬ LÝ HỒ SƠ NHÂN VẬT (TAB PROFILE)
+        // ===============================================================
+
+        private async void btnChangePassword_Click(object sender, RoutedEventArgs e)
+        {
+            string oldPass = txtOldPassword.Password;
+            string newPass = txtNewPassword.Password;
+
+            if (string.IsNullOrEmpty(oldPass) || string.IsNullOrEmpty(newPass))
+            {
+                MessageBox.Show("Vui lòng nhập đủ mật khẩu cũ và mới!", "CẢNH BÁO", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var payload = new { username = _username, oldPassword = oldPass, newPassword = newPass };
+            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+            try
+            {
+                var response = await _httpClient.PostAsync($"{API_SERVER_URL}/auth/change-password", content);
+                var result = JsonSerializer.Deserialize<ServerInfoResponse>(await response.Content.ReadAsStringAsync(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (result != null && result.Success)
+                {
+                    MessageBox.Show("Đổi mật khẩu thành công!", "THÀNH CÔNG", MessageBoxButton.OK, MessageBoxImage.Information);
+                    txtOldPassword.Password = "";
+                    txtNewPassword.Password = "";
+                    
+                    if (File.Exists(SESSION_FILE))
+                    {
+                        try 
+                        {
+                            var sessionJson = File.ReadAllText(SESSION_FILE);
+                            var sessionDict = JsonSerializer.Deserialize<Dictionary<string, string>>(sessionJson);
+                            if (sessionDict != null && sessionDict.ContainsKey("Username"))
+                            {
+                                sessionDict["Password"] = Convert.ToBase64String(Encoding.UTF8.GetBytes(newPass));
+                                File.WriteAllText(SESSION_FILE, JsonSerializer.Serialize(sessionDict));
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                else 
+                {
+                    MessageBox.Show(result?.Message ?? "Mật khẩu cũ không chính xác!", "LỖI", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex) 
+            { 
+                MessageBox.Show(ex.Message, "LỖI KẾT NỐI", MessageBoxButton.OK, MessageBoxImage.Error); 
+            }
+        }
+
+        private async void btnSendEmailOtp_Click(object sender, RoutedEventArgs e)
+        {
+            string newEmail = txtNewEmail.Text;
+            if (string.IsNullOrEmpty(newEmail)) 
+            {
+                MessageBox.Show("Vui lòng nhập Email mới!", "CẢNH BÁO", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var payload = new { username = _username, newEmail = newEmail };
+            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+            try
+            {
+                var response = await _httpClient.PostAsync($"{API_SERVER_URL}/auth/request-email-change", content);
+                string responseString = await response.Content.ReadAsStringAsync();
+
+                // LỚP BẢO VỆ: NẾU SERVER TRẢ VỀ HTML BÁO LỖI THAY VÌ JSON
+                if (responseString.Trim().StartsWith("<"))
+                {
+                    MessageBox.Show("Máy chủ Node.js đang bị lỗi (Crash) và trả về trang HTML thay vì JSON.\n\nVui lòng mở cửa sổ CMD/Terminal chạy Node.js lên để xem chi tiết dòng lỗi màu đỏ!", "LỖI BACKEND NODE.JS", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                var result = JsonSerializer.Deserialize<ServerInfoResponse>(responseString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (result != null && result.Success)
+                {
+                    MessageBox.Show("Đã gửi mã OTP đến email mới của bạn!", "THÀNH CÔNG", MessageBoxButton.OK, MessageBoxImage.Information);
+                    if (pnlOtpVerify != null) pnlOtpVerify.Visibility = Visibility.Visible; 
+                }
+                else 
+                {
+                    MessageBox.Show(result?.Message ?? "Lỗi gửi email!", "LỖI", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex) 
+            { 
+                MessageBox.Show(ex.Message, "LỖI KẾT NỐI", MessageBoxButton.OK, MessageBoxImage.Error); 
+            }
+        }
+
+        private async void btnConfirmEmailChange_Click(object sender, RoutedEventArgs e)
+        {
+            string newEmail = txtNewEmail.Text;
+            string otp = txtEmailOtp.Text;
+
+            if (string.IsNullOrEmpty(newEmail) || string.IsNullOrEmpty(otp))
+            {
+                MessageBox.Show("Vui lòng nhập đầy đủ Email mới và OTP!", "CẢNH BÁO", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var payload = new { username = _username, newEmail = newEmail, otp = otp };
+            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+            try
+            {
+                var response = await _httpClient.PostAsync($"{API_SERVER_URL}/auth/change-email", content);
+                var result = JsonSerializer.Deserialize<ServerInfoResponse>(await response.Content.ReadAsStringAsync(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (result != null && result.Success)
+                {
+                    MessageBox.Show("Cập nhật Email khôi phục thành công!", "THÀNH CÔNG", MessageBoxButton.OK, MessageBoxImage.Information);
+                    txtNewEmail.Text = "";
+                    txtEmailOtp.Text = "";
+                    if (pnlOtpVerify != null) pnlOtpVerify.Visibility = Visibility.Collapsed; 
+                }
+                else 
+                {
+                    MessageBox.Show(result?.Message ?? "Mã OTP Sai!", "LỖI", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex) 
+            { 
+                MessageBox.Show(ex.Message, "LỖI KẾT NỐI", MessageBoxButton.OK, MessageBoxImage.Error); 
+            }
+        }
+
+        // ===============================================================
+        // SỰ KIỆN CHUYỂN TAB CÓ ANIMATION MƯỢT MÀ
+        // ===============================================================
+        
+        private void PlayTransitionAnimation(FrameworkElement targetPanel, params FrameworkElement[] panelsToHide)
+        {
+            if (targetPanel == null) return;
+
+            foreach (var panel in panelsToHide)
+            {
+                if (panel != null) panel.Visibility = Visibility.Collapsed;
+            }
+
+            targetPanel.Visibility = Visibility.Visible;
+            targetPanel.Opacity = 0;
+
+            TranslateTransform trans = new TranslateTransform(0, 15);
+            targetPanel.RenderTransform = trans;
+
+            DoubleAnimation fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(250));
+            DoubleAnimation slideUp = new DoubleAnimation(15, 0, TimeSpan.FromMilliseconds(300))
+            {
+                EasingFunction = new QuarticEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            targetPanel.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+            trans.BeginAnimation(TranslateTransform.YProperty, slideUp);
+        }
+
+        private void TabHome_Checked(object sender, RoutedEventArgs e)
+        {
+            if (ViewHome != null && ViewProfile != null)
+                PlayTransitionAnimation(ViewHome, ViewProfile);
+        }
+
+        private void TabProfile_Checked(object sender, RoutedEventArgs e)
+        {
+            if (ViewHome != null && ViewProfile != null)
+                PlayTransitionAnimation(ViewProfile, ViewHome);
+        }
+
+        private void SubTabInfo_Checked(object sender, RoutedEventArgs e)
+        {
+            if (pnlProfileInfo == null) return;
+            PlayTransitionAnimation(pnlProfileInfo, pnlProfileEmail, pnlProfilePassword);
+        }
+
+        private void SubTabEmail_Checked(object sender, RoutedEventArgs e)
+        {
+            if (pnlProfileEmail == null) return;
+            PlayTransitionAnimation(pnlProfileEmail, pnlProfileInfo, pnlProfilePassword);
+        }
+
+        private void SubTabPassword_Checked(object sender, RoutedEventArgs e)
+        {
+            if (pnlProfilePassword == null) return;
+            PlayTransitionAnimation(pnlProfilePassword, pnlProfileInfo, pnlProfileEmail);
+        }
+
+        // ===============================================================
+        // CÁC SỰ KIỆN ĐIỀU KHIỂN CỬA SỔ CHUNG
+        // ===============================================================
+
         private void TopBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) { this.DragMove(); }
         private void MinimizeButton_Click(object sender, RoutedEventArgs e) { this.WindowState = WindowState.Minimized; }
         private void CloseButton_Click(object sender, RoutedEventArgs e) { Application.Current.Shutdown(); }
         
         private void LogoutButton_Click(object sender, RoutedEventArgs e)
         {
+            if (File.Exists(SESSION_FILE)) 
+            {
+                File.Delete(SESSION_FILE);
+            }
+
             this.IsHitTestVisible = false;
             var fadeOutHome = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(400));
             fadeOutHome.Completed += (s, ev) => {
@@ -363,12 +579,18 @@ namespace MinecraftLauncher
         }
     }
 
+    // ===============================================================
+    // LỚP MODEL NHẬN DỮ LIỆU TỪ BACKEND
+    // ===============================================================
     public class ServerInfoResponse
     {
         public bool Success { get; set; }
+        public string? Message { get; set; } 
         public string? Version { get; set; }
         public string? Loader { get; set; }
         public string? Loader_Version { get; set; } 
+        public string? Server_Ip { get; set; }  
+        public int Server_Port { get; set; }     
         public int TotalMods { get; set; }
         public List<string>? Mods { get; set; }
     }

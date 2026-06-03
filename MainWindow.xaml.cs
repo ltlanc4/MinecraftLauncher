@@ -1,12 +1,11 @@
-﻿using System;
+﻿using System.IO;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
-using System.Net.Http;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace MinecraftLauncher
 {
@@ -18,11 +17,49 @@ namespace MinecraftLauncher
         // ĐỊA CHỈ BACKEND API
         private readonly string API_BASE_URL = "http://localhost:3000/auth";
 
+        // === THÊM: TÊN TỆP LƯU TRỮ PHIÊN ĐĂNG NHẬP ===
+        private readonly string SESSION_FILE = "session_data.json";
+
         public MainWindow()
         {
             InitializeComponent();
             this.MouseLeftButtonDown += (s, e) => this.DragMove();
             _currentPanel = LoginPanel;
+            
+            // === THÊM: Lắng nghe sự kiện để tự động điền tài khoản khi mở Launcher ===
+            this.Loaded += MainWindow_Loaded;
+        }
+
+        // ================= TỰ ĐỘNG ĐIỀN VÀ ĐĂNG NHẬP NẾU CÓ LƯU =================
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (File.Exists(SESSION_FILE))
+            {
+                try
+                {
+                    string json = File.ReadAllText(SESSION_FILE);
+                    var session = JsonSerializer.Deserialize<UserSession>(json);
+
+                    if (session != null && !string.IsNullOrEmpty(session.Username) && !string.IsNullOrEmpty(session.Password))
+                    {
+                        // Điền sẵn thông tin vào giao diện (Dùng đúng tên biến txtLogin của bạn)
+                        txtLoginUsername.Text = session.Username;
+                        
+                        // Giải mã password từ Base64 để điền vào ô mật khẩu
+                        string decodedPass = Encoding.UTF8.GetString(Convert.FromBase64String(session.Password));
+                        txtLoginPassword.Password = decodedPass;
+                        
+                        chkRememberMe.IsChecked = true;
+
+                        // Tự động kích hoạt Đăng Nhập
+                        LoginButton_Click(btnLogin, null);
+                    }
+                }
+                catch
+                {
+                    File.Delete(SESSION_FILE);
+                }
+            }
         }
 
         // ================= XỬ LÝ NHẤN PHÍM ENTER =================
@@ -196,7 +233,21 @@ namespace MinecraftLauncher
 
                 if (response.IsSuccessStatusCode && result != null && result.Success)
                 {
-                    // ĐÃ XÓA NOTIFICATION Ở ĐÂY ĐỂ TRÁNH RỐI MẮT KHI CHUYỂN CẢNH
+                    // === THÊM: LƯU TÀI KHOẢN & MẬT KHẨU (ĐÃ MÃ HÓA) NẾU CÓ TICK ===
+                    if (chkRememberMe.IsChecked == true)
+                    {
+                        var newSession = new UserSession
+                        {
+                            Username = username,
+                            Password = Convert.ToBase64String(Encoding.UTF8.GetBytes(password))
+                        };
+                        File.WriteAllText(SESSION_FILE, JsonSerializer.Serialize(newSession));
+                    }
+                    else
+                    {
+                        if (File.Exists(SESSION_FILE)) File.Delete(SESSION_FILE);
+                    }
+                    // ==============================================================
 
                     this.IsHitTestVisible = false;
 
@@ -397,6 +448,13 @@ namespace MinecraftLauncher
                 btn.Content = "ĐỔI MẬT KHẨU";
             }
         }
+    }
+
+    // === THÊM: Lớp dữ liệu hỗ trợ Ghi Nhớ Đăng Nhập ===
+    public class UserSession
+    {
+        public string Username { get; set; }
+        public string Password { get; set; }
     }
 
     public class ApiResponse
