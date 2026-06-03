@@ -8,65 +8,56 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
-using System.Windows.Threading;
 using CmlLib.Core;
 using CmlLib.Core.Auth;
+using System.Windows.Threading;
 
 namespace MinecraftLauncher
 {
     public partial class HomeWindow : Window
     {
-        private string _username;
+        private string _username; 
         private static readonly HttpClient _httpClient = new HttpClient();
         private readonly string API_SERVER_URL = "http://localhost:3000";
-        private ServerInfoResponse _serverManifest;
-        private bool _isInstalled = false;
+        private ServerInfoResponse _serverManifest; 
+        private bool _isInstalled = false; 
 
-        // ================= BIẾN LƯU TRỮ ĐƯỜNG DẪN =================
         private string _minecraftDirectory;
-        private readonly string PATH_CONFIG_FILE = "launcher_path.txt"; // Tệp lưu cấu hình
+        private readonly string PATH_CONFIG_FILE = "launcher_path.txt"; 
 
         public HomeWindow(string username, string token, string uuid)
         {
             InitializeComponent();
             _username = username;
             txtUsername.Text = username.ToUpper();
-
-            // Khởi tạo thư mục game từ lúc mới bật
+            
             LoadMinecraftPath();
         }
 
-        // ================= QUẢN LÝ TÙY CHỌN THƯ MỤC =================
+        // ================= XỬ LÝ ĐƯỜNG DẪN CÀI ĐẶT =================
         private void LoadMinecraftPath()
         {
-            // Lấy đường dẫn từ file config, nếu chưa có thì mặc định ổ C
             string baseFolder;
             if (File.Exists(PATH_CONFIG_FILE))
             {
                 baseFolder = File.ReadAllText(PATH_CONFIG_FILE).Trim();
             }
-            else
+            else 
             {
-                baseFolder = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "Minecraft"
-                );
+                baseFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Minecraft");
             }
 
-            // Đảm bảo thư mục luôn có "Minecraft" làm cha
             _minecraftDirectory = EnsureMinecraftDirectory(baseFolder);
             txtInstallPath.Text = _minecraftDirectory;
         }
 
         private string EnsureMinecraftDirectory(string path)
         {
-            // Nếu đường dẫn không kết thúc bằng "\Minecraft", tự động thêm vào
             if (!path.EndsWith("Minecraft", StringComparison.OrdinalIgnoreCase))
             {
                 path = Path.Combine(path, "Minecraft");
             }
-
-            // Tự động tạo thư mục nếu chưa có
+            
             if (!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
@@ -76,38 +67,25 @@ namespace MinecraftLauncher
 
         private void SaveMinecraftPath(string path)
         {
-            // Ép buộc path luôn kết thúc bằng \Minecraft
             _minecraftDirectory = EnsureMinecraftDirectory(path);
-
             File.WriteAllText(PATH_CONFIG_FILE, _minecraftDirectory);
             txtInstallPath.Text = _minecraftDirectory;
-
-            CheckInstallationStatus();
+            
+            CheckInstallationStatus(); 
         }
 
         private void ChangePath_Click(object sender, RoutedEventArgs e)
         {
-            // Thủ thuật dùng OpenFileDialog của WPF để chọn Folder mà không cần WinForms
-            var dialog = new Microsoft.Win32.OpenFileDialog
+            var dialog = new System.Windows.Forms.FolderBrowserDialog();
+            dialog.Description = "Chọn thư mục chứa game (Thư mục 'Minecraft' sẽ được tự động tạo)";
+            
+            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                ValidateNames = false,
-                CheckFileExists = false,
-                CheckPathExists = true,
-                FileName = "Chọn thư mục này", // Tên hiển thị giả định
-                Filter = "Thư mục|*.none",
-                Title = "Chọn thư mục bạn muốn lưu trò chơi",
-            };
-
-            if (dialog.ShowDialog() == true)
-            {
-                string selectedPath = Path.GetDirectoryName(dialog.FileName);
-                if (!string.IsNullOrEmpty(selectedPath))
-                {
-                    SaveMinecraftPath(selectedPath);
-                }
+                SaveMinecraftPath(dialog.SelectedPath);
             }
         }
 
+        // ================= TẢI DỮ LIỆU TỪ SERVER =================
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             await LoadServerInfoFromManifest();
@@ -117,24 +95,18 @@ namespace MinecraftLauncher
         {
             try
             {
-                HttpResponseMessage response = await _httpClient.GetAsync(
-                    $"{API_SERVER_URL}/auth/server-info"
-                );
+                HttpResponseMessage response = await _httpClient.GetAsync($"{API_SERVER_URL}/auth/server-info");
                 if (response.IsSuccessStatusCode)
                 {
                     string responseString = await response.Content.ReadAsStringAsync();
-                    _serverManifest = JsonSerializer.Deserialize<ServerInfoResponse>(
-                        responseString,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                    );
+                    _serverManifest = JsonSerializer.Deserialize<ServerInfoResponse>(responseString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                     if (_serverManifest != null && _serverManifest.Success)
                     {
                         txtGameVersion.Text = $"{_serverManifest.Loader} {_serverManifest.Version}";
-                        txtTotalMods.Text =
-                            $"Đã kiểm tra đồng bộ: {_serverManifest.TotalMods} Mods hoạt động.";
+                        txtTotalMods.Text = $"Đã kiểm tra đồng bộ: {_serverManifest.TotalMods} Mods hoạt động.";
                         icModsList.ItemsSource = _serverManifest.Mods;
-
+                        
                         CheckInstallationStatus();
                         return;
                     }
@@ -149,49 +121,55 @@ namespace MinecraftLauncher
             }
         }
 
+        private string GetTargetVersionName()
+        {
+            if (_serverManifest == null || string.IsNullOrEmpty(_serverManifest.Version)) return "";
+            
+            if (_serverManifest.Loader != null && _serverManifest.Loader.ToLower() == "fabric" && !string.IsNullOrEmpty(_serverManifest.Loader_Version))
+            {
+                return $"fabric-loader-{_serverManifest.Loader_Version}-{_serverManifest.Version}";
+            }
+            return _serverManifest.Version; 
+        }
+
         private void CheckInstallationStatus()
         {
-            if (_serverManifest == null || string.IsNullOrEmpty(_serverManifest.Version))
-                return;
+            if (_serverManifest == null || string.IsNullOrEmpty(_serverManifest.Version)) return;
 
-            // Cập nhật CmlLib trỏ vào vị trí do người dùng cài đặt
             var path = new MinecraftPath(_minecraftDirectory);
-            string versionFolder = Path.Combine(path.Versions, _serverManifest.Version);
+            string targetVersion = GetTargetVersionName();
+            string versionFolder = Path.Combine(path.Versions, targetVersion);
+            string jsonFile = Path.Combine(versionFolder, targetVersion + ".json");
             string modsDir = Path.Combine(path.BasePath, "mods");
 
-            bool isGameInstalled = Directory.Exists(versionFolder);
-
+            bool isGameInstalled = File.Exists(jsonFile);
+            
             bool areModsInstalled = true;
             if (_serverManifest.Mods != null && _serverManifest.Mods.Count > 0)
             {
-                if (!Directory.Exists(modsDir))
+                if (!Directory.Exists(modsDir)) 
                 {
                     areModsInstalled = false;
-                }
-                else
+                } 
+                else 
                 {
                     var localFiles = Directory.GetFiles(modsDir).Select(Path.GetFileName).ToList();
                     var missingMods = _serverManifest.Mods.Except(localFiles).ToList();
-                    if (missingMods.Count > 0)
-                        areModsInstalled = false;
+                    if (missingMods.Count > 0) areModsInstalled = false;
                 }
             }
 
             _isInstalled = isGameInstalled && areModsInstalled;
-
-            Dispatcher.Invoke(() =>
-            {
+            
+            Dispatcher.Invoke(() => {
                 btnPlay.Content = _isInstalled ? "KHỞI ĐỘNG" : "CÀI ĐẶT";
             });
         }
 
+        // ================= CƠ CHẾ ĐỒNG BỘ MODS =================
         private async Task SyncModsAsync(string modsDirectory)
         {
-            if (
-                _serverManifest == null
-                || _serverManifest.Mods == null
-                || _serverManifest.Mods.Count == 0
-            )
+            if (_serverManifest == null || _serverManifest.Mods == null || _serverManifest.Mods.Count == 0)
                 return;
 
             if (!Directory.Exists(modsDirectory))
@@ -203,18 +181,14 @@ namespace MinecraftLauncher
             var filesToDelete = localFiles.Except(serverFiles).ToList();
             foreach (var file in filesToDelete)
             {
-                try
-                {
-                    File.Delete(Path.Combine(modsDirectory, file));
-                }
+                try { File.Delete(Path.Combine(modsDirectory, file)); } 
                 catch { }
             }
 
             var filesToDownload = serverFiles.Except(localFiles).ToList();
             if (filesToDownload.Count > 0)
             {
-                Dispatcher.Invoke(() =>
-                {
+                Dispatcher.Invoke(() => {
                     pbDownload.Maximum = filesToDownload.Count;
                     pbDownload.Value = 0;
                 });
@@ -222,12 +196,10 @@ namespace MinecraftLauncher
                 for (int i = 0; i < filesToDownload.Count; i++)
                 {
                     string modFile = filesToDownload[i];
-                    Dispatcher.Invoke(() =>
-                    {
+                    Dispatcher.Invoke(() => {
                         txtDownloadStatus.Text = $"Đang tải Mod: {modFile}";
                         txtDownloadDetail.Text = $"{i} / {filesToDownload.Count} Tệp";
-                        txtDownloadPercentage.Text =
-                            $"{((double)i / filesToDownload.Count * 100):F0}%";
+                        txtDownloadPercentage.Text = $"{((double)i / filesToDownload.Count * 100):F0}%";
                     });
 
                     string fileUrl = $"{API_SERVER_URL}/mods/{modFile}";
@@ -240,30 +212,20 @@ namespace MinecraftLauncher
                     }
                     catch (Exception ex)
                     {
-                        Dispatcher.Invoke(() =>
-                            NotificationManager.Show(
-                                "LỖI TẢI MOD",
-                                $"Không thể tải {modFile}: {ex.Message}"
-                            )
-                        );
+                        Dispatcher.Invoke(() => NotificationManager.Show("LỖI TẢI MOD", $"Không thể tải {modFile}: {ex.Message}"));
                     }
 
-                    Dispatcher.Invoke(() =>
-                    {
-                        pbDownload.Value = i + 1;
-                    });
+                    Dispatcher.Invoke(() => { pbDownload.Value = i + 1; });
                 }
             }
         }
 
+        // ================= XỬ LÝ KHỞI ĐỘNG TRÒ CHƠI =================
         private async void PlayButton_Click(object sender, RoutedEventArgs e)
         {
             if (_serverManifest == null)
             {
-                NotificationManager.Show(
-                    "LỖI KẾT NỐI",
-                    "Chưa lấy được cấu hình phiên bản từ máy chủ!"
-                );
+                NotificationManager.Show("LỖI KẾT NỐI", "Chưa lấy được cấu hình phiên bản từ máy chủ!");
                 return;
             }
 
@@ -273,8 +235,7 @@ namespace MinecraftLauncher
 
             try
             {
-                // Truyền vị trí cài đặt tùy chỉnh vào Engine CmlLib
-                var path = new MinecraftPath(_minecraftDirectory);
+                var path = new MinecraftPath(_minecraftDirectory); 
                 var launcher = new CMLauncher(path);
 
                 launcher.FileChanged += (fileEvent) =>
@@ -282,39 +243,55 @@ namespace MinecraftLauncher
                     Dispatcher.Invoke(() =>
                     {
                         txtDownloadStatus.Text = $"[{fileEvent.FileKind}] {fileEvent.FileName}";
-                        txtDownloadDetail.Text =
-                            $"{fileEvent.ProgressedFileCount} / {fileEvent.TotalFileCount}";
+                        txtDownloadDetail.Text = $"{fileEvent.ProgressedFileCount} / {fileEvent.TotalFileCount}";
                         pbDownload.Maximum = fileEvent.TotalFileCount;
                         pbDownload.Value = fileEvent.ProgressedFileCount;
-                        double pct =
-                            fileEvent.TotalFileCount > 0
-                                ? ((double)fileEvent.ProgressedFileCount / fileEvent.TotalFileCount)
-                                    * 100
-                                : 0;
+                        double pct = fileEvent.TotalFileCount > 0 ? ((double)fileEvent.ProgressedFileCount / fileEvent.TotalFileCount) * 100 : 0;
                         txtDownloadPercentage.Text = $"{pct:F0}%";
                     });
                 };
 
+                string targetVersion = GetTargetVersionName();
+
                 if (!_isInstalled)
                 {
-                    Dispatcher.Invoke(() =>
+                    // TỰ ĐỘNG LẤY FILE JSON TỪ FABRIC META API
+                    if (targetVersion.StartsWith("fabric-loader"))
                     {
+                        string versionDir = Path.Combine(path.Versions, targetVersion);
+                        string jsonPath = Path.Combine(versionDir, targetVersion + ".json");
+
+                        if (!File.Exists(jsonPath))
+                        {
+                            Dispatcher.Invoke(() => txtDownloadStatus.Text = "Đang lấy dữ liệu Fabric từ máy chủ chính thức...");
+                            if (!Directory.Exists(versionDir)) Directory.CreateDirectory(versionDir);
+                            
+                            string fabricApiUrl = $"https://meta.fabricmc.net/v2/versions/loader/{_serverManifest.Version}/{_serverManifest.Loader_Version}/profile/json";
+                            
+                            try 
+                            {
+                                byte[] jsonBytes = await _httpClient.GetByteArrayAsync(fabricApiUrl);
+                                await File.WriteAllBytesAsync(jsonPath, jsonBytes);
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new Exception($"Không thể lấy cấu hình Fabric: {ex.Message}");
+                            }
+                        }
+                    }
+
+                    Dispatcher.Invoke(() => {
                         btnPlay.Content = "ĐANG TẢI...";
-                        txtDownloadStatus.Text = "Đang tải thư viện Minecraft Core...";
+                        txtDownloadStatus.Text = "Đang cài đặt thư viện Minecraft Core và Fabric...";
+                    });
+                    
+                    var process = await launcher.CreateProcessAsync(targetVersion, new MLaunchOption
+                    {
+                        Session = MSession.GetOfflineSession(_username), 
+                        MaximumRamMb = 4096 
                     });
 
-                    var process = await launcher.CreateProcessAsync(
-                        _serverManifest.Version,
-                        new MLaunchOption
-                        {
-                            Session = MSession.GetOfflineSession(_username),
-                            MaximumRamMb = 4096,
-                        }
-                    );
-
-                    Dispatcher.Invoke(() =>
-                        txtDownloadStatus.Text = "Đang đồng bộ Mods từ Máy chủ..."
-                    );
+                    Dispatcher.Invoke(() => txtDownloadStatus.Text = "Đang đồng bộ Mods từ Máy chủ...");
                     string modsDir = Path.Combine(path.BasePath, "mods");
                     await SyncModsAsync(modsDir);
 
@@ -325,47 +302,35 @@ namespace MinecraftLauncher
                     DownloadProgressContainer.Visibility = Visibility.Collapsed;
                     btnPlay.IsEnabled = true;
                     btnPlay.Content = "KHỞI ĐỘNG";
-                    NotificationManager.Show(
-                        "CÀI ĐẶT XONG",
-                        "Trò chơi đã sẵn sàng. Bạn có thể nhấn Khởi Động!"
-                    );
+                    NotificationManager.Show("CÀI ĐẶT XONG", "Trò chơi đã sẵn sàng. Bạn có thể nhấn Khởi Động!");
                 }
                 else
                 {
-                    Dispatcher.Invoke(() =>
-                    {
+                    Dispatcher.Invoke(() => {
                         btnPlay.Content = "ĐANG VÀO GAME...";
                         txtDownloadStatus.Text = "Đang kiểm tra cập nhật tài nguyên...";
                     });
-
-                    var process = await launcher.CreateProcessAsync(
-                        _serverManifest.Version,
-                        new MLaunchOption
-                        {
-                            Session = MSession.GetOfflineSession(_username),
-                            MaximumRamMb = 4096,
-                        }
-                    );
+                    
+                    var process = await launcher.CreateProcessAsync(targetVersion, new MLaunchOption
+                    {
+                        Session = MSession.GetOfflineSession(_username), 
+                        MaximumRamMb = 4096 
+                    });
 
                     string modsDir = Path.Combine(path.BasePath, "mods");
                     await SyncModsAsync(modsDir);
 
-                    Dispatcher.Invoke(() =>
-                        txtDownloadStatus.Text = "Đang khởi động tiến trình trò chơi..."
-                    );
+                    Dispatcher.Invoke(() => txtDownloadStatus.Text = "Đang khởi động tiến trình trò chơi...");
                     await Task.Delay(500);
-
-                    process.Start();
+                    
+                    process.Start(); 
 
                     DownloadProgressContainer.Visibility = Visibility.Collapsed;
                     btnPlay.IsEnabled = true;
                     btnPlay.Content = "ĐANG CHƠI";
-                    NotificationManager.Show(
-                        "VÀO GAME",
-                        "Minecraft đang khởi động. Launcher sẽ tự thu nhỏ."
-                    );
-
-                    this.WindowState = WindowState.Minimized;
+                    NotificationManager.Show("VÀO GAME", "Minecraft đang khởi động. Launcher sẽ tự thu nhỏ.");
+                    
+                    this.WindowState = WindowState.Minimized; 
                 }
             }
             catch (Exception ex)
@@ -377,29 +342,18 @@ namespace MinecraftLauncher
             }
         }
 
-        private void TopBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            this.DragMove();
-        }
-
-        private void MinimizeButton_Click(object sender, RoutedEventArgs e)
-        {
-            this.WindowState = WindowState.Minimized;
-        }
-
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
-        {
-            Application.Current.Shutdown();
-        }
-
+        // ================= CÁC SỰ KIỆN GIAO DIỆN KHÁC =================
+        private void TopBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) { this.DragMove(); }
+        private void MinimizeButton_Click(object sender, RoutedEventArgs e) { this.WindowState = WindowState.Minimized; }
+        private void CloseButton_Click(object sender, RoutedEventArgs e) { Application.Current.Shutdown(); }
+        
         private void LogoutButton_Click(object sender, RoutedEventArgs e)
         {
             this.IsHitTestVisible = false;
             var fadeOutHome = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(400));
-            fadeOutHome.Completed += (s, ev) =>
-            {
+            fadeOutHome.Completed += (s, ev) => {
                 MainWindow loginWindow = new MainWindow();
-                loginWindow.Opacity = 0;
+                loginWindow.Opacity = 0; 
                 loginWindow.Show();
                 var fadeInLogin = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(400));
                 loginWindow.BeginAnimation(Window.OpacityProperty, fadeInLogin);
@@ -414,6 +368,7 @@ namespace MinecraftLauncher
         public bool Success { get; set; }
         public string? Version { get; set; }
         public string? Loader { get; set; }
+        public string? Loader_Version { get; set; } 
         public int TotalMods { get; set; }
         public List<string>? Mods { get; set; }
     }
