@@ -1,7 +1,8 @@
 ﻿<Window x:Class="MinecraftLauncher.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Minecraft Launcher" Height="720" Width="1280"
+        Title="OtonashiRei MCServer" Height="720" Width="1280"
+        Icon="pack://application:,,,/Assets/icon.jpg"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ResizeMode="NoResize" KeyDown="Window_KeyDown">
@@ -156,8 +157,8 @@
 
                     <StackPanel x:Name="LoginPanel" VerticalAlignment="Center" Visibility="Visible">
                         <WrapPanel Margin="0,0,0,40">
-                            <TextBlock Text="MINECRAFT " FontSize="28" FontWeight="Bold" Foreground="White"/>
-                            <TextBlock Text="LAUNCHER" FontSize="28" FontWeight="Bold" Foreground="#F36895"/>
+                            <TextBlock Text="OTONASHIREI " FontSize="28" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="MCSERVER" FontSize="28" FontWeight="Bold" Foreground="#F36895"/>
                         </WrapPanel>
 
                         <TextBlock Text="TÀI KHOẢN" Foreground="#BFA6C4" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>

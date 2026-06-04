@@ -37,6 +37,9 @@ namespace MinecraftLauncher
 
         // === RADAR BẮT SỰ KIỆN TỰ ĐỘNG CẬP NHẬT MOD ===
         private DispatcherTimer _autoSyncTimer;
+        
+        // THÊM DÒNG NÀY: RADAR BẮT SỰ KIỆN FILE BỊ XÓA LOCAL
+        private FileSystemWatcher _modsWatcher;
 
         // LƯU TRỮ ẢNH SKIN ĐƯỢC CHỌN (DẠNG BASE64)
         private string _selectedSkinBase64 = "";
@@ -242,20 +245,52 @@ namespace MinecraftLauncher
             string jsonFile = Path.Combine(versionFolder, targetVersion + ".json");
             string modsDir = Path.Combine(path.BasePath, "mods");
 
-            bool isGameInstalled = File.Exists(jsonFile);
+            // === 1. THIẾT LẬP RADAR THEO DÕI THƯ MỤC MODS TRÊN Ổ CỨNG ===
+            if (!Directory.Exists(modsDir)) Directory.CreateDirectory(modsDir);
+            
+            if (_modsWatcher == null || _modsWatcher.Path != modsDir)
+            {
+                if (_modsWatcher != null)
+                {
+                    _modsWatcher.EnableRaisingEvents = false;
+                    _modsWatcher.Dispose();
+                }
+                
+                _modsWatcher = new FileSystemWatcher(modsDir);
+                _modsWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite;
+                
+                FileSystemEventHandler onModChanged = (s, e) => {
+                    Dispatcher.Invoke(() => {
+                        // Cực kỳ quan trọng: Bỏ qua nếu Launcher đang tải Mod hoặc đang trong Game
+                        if (btnPlay == null || btnPlay.IsEnabled == false) return; 
+                        CheckInstallationStatus();
+                    });
+                };
 
+                _modsWatcher.Deleted += onModChanged;
+                _modsWatcher.Created += onModChanged;
+                _modsWatcher.Renamed += new RenamedEventHandler(onModChanged);
+                
+                _modsWatcher.EnableRaisingEvents = true;
+            }
+            // ==============================================================
+
+            bool isGameInstalled = File.Exists(jsonFile);
             bool areModsInstalled = true;
+            
+            var displayList = new List<ModStatusItem>();
+
             if (_serverManifest.Mods != null && _serverManifest.Mods.Count > 0)
             {
-                if (!Directory.Exists(modsDir))
+                var localFiles = Directory.GetFiles(modsDir).Select(Path.GetFileName).ToList();
+                var missingMods = _serverManifest.Mods.Except(localFiles).ToList();
+                var extraMods = localFiles.Except(_serverManifest.Mods).ToList(); 
+                
+                if (missingMods.Count > 0 || extraMods.Count > 0) areModsInstalled = false;
+
+                foreach (var m in _serverManifest.Mods) 
                 {
-                    areModsInstalled = false;
-                }
-                else
-                {
-                    var localFiles = Directory.GetFiles(modsDir).Select(Path.GetFileName).ToList();
-                    var missingMods = _serverManifest.Mods.Except(localFiles).ToList();
-                    if (missingMods.Count > 0) areModsInstalled = false;
+                    displayList.Add(new ModStatusItem { FileName = m, IsInstalled = localFiles.Contains(m) });
                 }
             }
 
@@ -263,7 +298,26 @@ namespace MinecraftLauncher
 
             Dispatcher.Invoke(() =>
             {
-                btnPlay.Content = _isInstalled ? "KHỞI ĐỘNG" : "CÀI ĐẶT";
+                if (icModsList != null) icModsList.ItemsSource = displayList;
+
+                // Nếu Game đang bật thì không đổi chữ của Nút Play
+                if (btnPlay.Content != null && btnPlay.Content.ToString() == "ĐANG CHƠI") return;
+
+                if (_isInstalled)
+                {
+                    btnPlay.Content = "KHỞI ĐỘNG";
+                    if (txtVersionLabel != null) txtVersionLabel.Text = "Phiên bản hiện tại: ";
+                }
+                else if (isGameInstalled && !areModsInstalled)
+                {
+                    btnPlay.Content = "CẬP NHẬT";
+                    if (txtVersionLabel != null) txtVersionLabel.Text = "Phiên bản hiện tại: ";
+                }
+                else
+                {
+                    btnPlay.Content = "CÀI ĐẶT";
+                    if (txtVersionLabel != null) txtVersionLabel.Text = "Phiên bản chuẩn bị tải: ";
+                }
             });
         }
 
@@ -394,6 +448,30 @@ namespace MinecraftLauncher
                     });
                 }
 
+                // ====================================================================
+                // TỰ ĐỘNG NHẬN DIỆN CHẾ ĐỘ MÀN HÌNH TỪ CÀI ĐẶT TRONG GAME
+                // ====================================================================
+                bool isFullScreen = false;
+                string optionsFile = Path.Combine(path.BasePath, "options.txt");
+                
+                if (File.Exists(optionsFile))
+                {
+                    try
+                    {
+                        // Đọc file cài đặt của Minecraft để xem lần trước người chơi chọn gì
+                        var lines = File.ReadAllLines(optionsFile);
+                        foreach (var line in lines)
+                        {
+                            if (line.StartsWith("fullscreen:"))
+                            {
+                                isFullScreen = line.Split(':')[1].Trim().ToLower() == "true";
+                                break;
+                            }
+                        }
+                    }
+                    catch { }
+                }
+
                 var launchOption = new MLaunchOption
                 {
                     Session = MSession.GetOfflineSession(_username),
@@ -402,12 +480,26 @@ namespace MinecraftLauncher
                     ServerPort = _serverManifest.Server_Port > 0 ? _serverManifest.Server_Port : 25565
                 };
 
+                // ÁP DỤNG TRẠNG THÁI MÀN HÌNH
+                if (isFullScreen)
+                {
+                    launchOption.FullScreen = true; // Chạy Fullscreen không viền chuẩn của game
+                }
+                else
+                {
+                    // Chạy ở chế độ Cửa sổ Phóng to (Maximized)
+                    launchOption.ScreenWidth = (int)SystemParameters.WorkArea.Width;
+                    launchOption.ScreenHeight = (int)SystemParameters.WorkArea.Height;
+                }
+                // ====================================================================
+
                 var process = await launcher.CreateProcessAsync(targetVersion, launchOption);
 
                 Dispatcher.Invoke(() => txtDownloadStatus.Text = "Đang đồng bộ Mods từ Máy chủ...");
                 string modsDir = Path.Combine(path.BasePath, "mods");
                 await SyncModsAsync(modsDir);
 
+                Dispatcher.Invoke(() => CheckInstallationStatus());
                 // ====================================================================
                 // TỰ ĐỘNG CẤU HÌNH CUSTOM SKIN LOADER
                 // ====================================================================
@@ -456,7 +548,13 @@ namespace MinecraftLauncher
                     Dispatcher.Invoke(() =>
                     {
                         btnPlay.IsEnabled = true;
-                        btnPlay.Content = "KHỞI ĐỘNG";
+                        
+                        // FIX LỖI KẸT CHỮ: Đổi tạm chữ khác để "đánh lừa" chốt chặn bảo vệ
+                        btnPlay.Content = "ĐANG KIỂM TRA..."; 
+                        
+                        // Lúc này chữ không còn là "ĐANG CHƠI" nữa nên hàm quét sẽ hoạt động 100%
+                        CheckInstallationStatus(); 
+                        
                         this.WindowState = WindowState.Normal;
                     });
                 };
@@ -466,7 +564,14 @@ namespace MinecraftLauncher
                 Dispatcher.Invoke(() =>
                 {
                     DownloadProgressContainer.Visibility = Visibility.Collapsed;
-                    _isInstalled = true;
+                    _isInstalled = true; // Đánh dấu là đã cài đặt xong
+                    
+                    // THÊM DÒNG NÀY: Cập nhật chữ thành "Phiên bản hiện tại" ngay sau khi tải xong
+                    if (txtVersionLabel != null) 
+                    {
+                        txtVersionLabel.Text = "Phiên bản hiện tại: ";
+                    }
+                    
                     btnPlay.Content = "ĐANG CHƠI";
                     btnPlay.IsEnabled = false;
                     NotificationManager.Show("VÀO GAME", "Đang kết nối trực tiếp siêu tốc tới máy chủ...");
@@ -480,7 +585,9 @@ namespace MinecraftLauncher
                     NotificationManager.Show("LỖI HỆ THỐNG", ex.Message);
                     DownloadProgressContainer.Visibility = Visibility.Collapsed;
                     btnPlay.IsEnabled = true;
-                    btnPlay.Content = _isInstalled ? "KHỞI ĐỘNG" : "CÀI ĐẶT";
+                    
+                    // Gọi lại hàm kiểm tra để tự động set chữ đúng trạng thái
+                    CheckInstallationStatus(); 
                 });
             }
         }
@@ -609,6 +716,9 @@ namespace MinecraftLauncher
                         NotificationManager.Show("THÀNH CÔNG", "Cập nhật Skin thành công!");
                         _selectedSkinBase64 = ""; 
                         if (btnUploadSkin != null) btnUploadSkin.IsEnabled = false;
+                        
+                        // THÊM DÒNG NÀY: Trả khung ảnh preview về trạng thái trống
+                        if (imgSkinPreview != null) imgSkinPreview.Source = null;
                         
                         await LoadUserSkinAsync();
                     }
@@ -1075,5 +1185,12 @@ namespace MinecraftLauncher
         public int Server_Port { get; set; }
         public int TotalMods { get; set; }
         public List<string>? Mods { get; set; }
+    }
+    public class ModStatusItem
+    {
+        public string FileName { get; set; }
+        public bool IsInstalled { get; set; }
+        public string StatusIcon => IsInstalled ? "✔" : "❌";
+        public string StatusColor => IsInstalled ? "#4ADE80" : "#FF4D4D";
     }
 }
