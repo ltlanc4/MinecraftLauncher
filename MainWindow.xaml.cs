@@ -15,7 +15,7 @@ namespace MinecraftLauncher
         private static readonly HttpClient _httpClient = new HttpClient();
         
         // ĐỊA CHỈ BACKEND API
-        private readonly string API_BASE_URL = "http://180.93.43.73:3000/auth";
+        private readonly string API_BASE_URL = "http://localhost:3000/auth";
 
         // === THÊM: TÊN TỆP LƯU TRỮ PHIÊN ĐĂNG NHẬP ===
         private readonly string SESSION_FILE = "session_data.json";

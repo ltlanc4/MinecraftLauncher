@@ -25,7 +25,7 @@ namespace MinecraftLauncher
         private static readonly HttpClient _httpClient = new HttpClient();
 
         // CẤU HÌNH API CỦA NODE.JS SERVER
-        private readonly string API_SERVER_URL = "http://180.93.43.73:3000";
+        private readonly string API_SERVER_URL = "http://localhost:3000";
         private readonly string SESSION_FILE = "session_data.json";
 
         private ServerInfoResponse _serverManifest;
