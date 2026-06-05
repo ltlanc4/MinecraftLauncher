@@ -135,8 +135,8 @@
   "radSubSetGraphics": "Đồ họa",
   "lblSettingsGeneralTitle": "CÀI ĐẶT CHUNG",
   "lblSettingsGraphicsTitle": "CÀI ĐẶT ĐỒ HỌA",
-  "msg_UpdateAvailableTitle": "BẢN CẬP NHẬT MỚI",
   "btn_UpdateClient": "⬇ CẬP NHẬT",
+  "msg_UpdateAvailableTitle": "BẢN CẬP NHẬT MỚI",
   "msg_GenericUpdateDesc": "Đã có phiên bản Launcher mới. Bạn có muốn tải và cập nhật ngay bây giờ không?",
   "msg_DownloadingUpdate": "Đ A N G   T Ả I   B Ả N   C Ậ P   N H Ậ T . . ."
 }
