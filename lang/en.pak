@@ -137,6 +137,6 @@
   "lblSettingsGraphicsTitle": "GRAPHICS SETTINGS",
   "btn_UpdateClient": "⬇ UPDATE",
   "msg_UpdateAvailableTitle": "UPDATE AVAILABLE",
-  "msg_UpdateAvailableDesc": "A new Launcher version ({0}) is available. Do you want to update now to experience new features?",
+  "msg_GenericUpdateDesc": "A new Launcher version ({0}) is available. Do you want to update now to experience new features?",
   "msg_DownloadingUpdate": "D O W N L O A D I N G   U P D A T E . . ."
 }
