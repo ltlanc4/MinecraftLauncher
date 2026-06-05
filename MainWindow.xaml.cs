@@ -1,7 +1,12 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -15,10 +20,15 @@ namespace MinecraftLauncher
         private static readonly HttpClient _httpClient = new HttpClient();
         
         // ĐỊA CHỈ BACKEND API
-        private readonly string API_BASE_URL = "http://localhost:3000/auth";
+        private readonly string API_BASE_URL = "http://180.93.43.73:3000/auth";
 
-        // === THÊM: TÊN TỆP LƯU TRỮ PHIÊN ĐĂNG NHẬP ===
+        // TÊN TỆP LƯU TRỮ PHIÊN ĐĂNG NHẬP
         private readonly string SESSION_FILE = "session_data.json";
+
+        // BIẾN NGÔN NGỮ
+        private readonly string LANG_CONFIG_FILE = "lang.txt";
+        private bool _isEnglish = true; // Mặc định là Tiếng Anh
+        private Dictionary<string, string> _langDict = new Dictionary<string, string>();
 
         public MainWindow()
         {
@@ -26,8 +36,96 @@ namespace MinecraftLauncher
             this.MouseLeftButtonDown += (s, e) => this.DragMove();
             _currentPanel = LoginPanel;
             
-            // === THÊM: Lắng nghe sự kiện để tự động điền tài khoản khi mở Launcher ===
+            // Lắng nghe sự kiện để tự động điền tài khoản khi mở Launcher
             this.Loaded += MainWindow_Loaded;
+
+            // KIỂM TRA NGÔN NGỮ: Nếu chưa có file thì tạo mặc định là Tiếng Anh
+            if (File.Exists(LANG_CONFIG_FILE))
+            {
+                _isEnglish = File.ReadAllText(LANG_CONFIG_FILE).Trim() == "EN";
+            }
+            else
+            {
+                File.WriteAllText(LANG_CONFIG_FILE, "EN");
+                _isEnglish = true;
+            }
+            ApplyLanguage();
+        }
+
+        // ================= HỆ THỐNG ĐA NGÔN NGỮ =================
+        private void btnLanguage_Click(object sender, RoutedEventArgs e)
+        {
+            string message = _isEnglish 
+                ? "The launcher needs to be restarted to apply the new language. Do you want to restart now?" 
+                : "Launcher cần khởi động lại để áp dụng ngôn ngữ mới. Bạn có muốn khởi động lại ngay bây giờ không?";
+            string title = _isEnglish ? "RESTART REQUIRED" : "YÊU CẦU KHỞI ĐỘNG LẠI";
+
+            // GỌI HỘP THOẠI CONFIRM CUSTOM CỦA CHÚNG TA
+            bool isConfirm = NotificationManager.ShowConfirm(title, message);
+
+            if (isConfirm)
+            {
+                _isEnglish = !_isEnglish; 
+                File.WriteAllText(LANG_CONFIG_FILE, _isEnglish ? "EN" : "VI"); 
+                
+                string currentExecutablePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
+                System.Diagnostics.Process.Start(currentExecutablePath);
+                
+                Application.Current.Shutdown();
+            }
+        }
+
+        private void ApplyLanguage()
+        {
+            string langFile = _isEnglish ? "lang/en.pak" : "lang/vi.pak";
+            try 
+            {
+                if (File.Exists(langFile))
+                {
+                    string json = File.ReadAllText(langFile);
+                    _langDict = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+                }
+            } 
+            catch { }
+
+            // Tự động map dữ liệu từ JSON vào toàn bộ Giao diện WPF
+            foreach (var kvp in _langDict)
+            {
+                // Bỏ qua các key kịch bản động không map thẳng vào x:Name
+                if (kvp.Key.StartsWith("msg_") || kvp.Key.StartsWith("btn_") || kvp.Key.StartsWith("lbl_")) continue;
+
+                var element = this.FindName(kvp.Key);
+                if (element is TextBlock tb) tb.Text = kvp.Value;
+                else if (element is Button btn) btn.Content = kvp.Value;
+                else if (element is CheckBox chk) chk.Content = kvp.Value;
+            }
+
+            // Đổi chữ hiển thị trên chính nút ngôn ngữ
+            if (this.FindName("btnLanguage") is Button btnLang) 
+            {
+                btnLang.Content = _isEnglish ? "EN-US" : "VI-VN";
+            }
+            
+            // Xử lý giữ nguyên chữ cho các nút nếu chúng đang hiển thị
+            var bLogin = this.FindName("btnLogin") as Button;
+            if (bLogin != null && bLogin.IsEnabled) bLogin.Content = GetLang("btnLogin");
+
+            var bReg = this.FindName("btnRegister") as Button;
+            if (bReg != null && bReg.IsEnabled) bReg.Content = GetLang("btnRegister");
+
+            var bSendCode = this.FindName("btnSendCode") as Button;
+            if (bSendCode != null && bSendCode.IsEnabled) bSendCode.Content = GetLang("btnSendCode");
+
+            var bConfirmReset = this.FindName("btnConfirmReset") as Button;
+            if (bConfirmReset != null && bConfirmReset.IsEnabled) bConfirmReset.Content = GetLang("btnConfirmReset");
+
+            if (this.FindName("lblLoadingText") is TextBlock lblLoad) lblLoad.Text = GetLang("lblLoadingText");
+        }
+
+        private string GetLang(string key)
+        {
+            if (_langDict != null && _langDict.ContainsKey(key)) return _langDict[key];
+            return key; 
         }
 
         // ================= TỰ ĐỘNG ĐIỀN VÀ ĐĂNG NHẬP NẾU CÓ LƯU =================
@@ -42,16 +140,13 @@ namespace MinecraftLauncher
 
                     if (session != null && !string.IsNullOrEmpty(session.Username) && !string.IsNullOrEmpty(session.Password))
                     {
-                        // Điền sẵn thông tin vào giao diện (Dùng đúng tên biến txtLogin của bạn)
                         txtLoginUsername.Text = session.Username;
                         
-                        // Giải mã password từ Base64 để điền vào ô mật khẩu
                         string decodedPass = Encoding.UTF8.GetString(Convert.FromBase64String(session.Password));
                         txtLoginPassword.Password = decodedPass;
                         
                         chkRememberMe.IsChecked = true;
 
-                        // Tự động kích hoạt Đăng Nhập
                         LoginButton_Click(btnLogin, null);
                     }
                 }
@@ -199,7 +294,7 @@ namespace MinecraftLauncher
         {
             if (string.IsNullOrWhiteSpace(responseString) || !responseString.Trim().StartsWith("{"))
             {
-                throw new Exception("Máy chủ không trả về JSON hợp lệ. Hãy kiểm tra xem Node.js đã bật chưa.");
+                throw new Exception(_isEnglish ? "Server HTML error. Please check Node.js." : "Máy chủ không trả về JSON hợp lệ. Hãy kiểm tra xem Node.js đã bật chưa.");
             }
         }
 
@@ -211,7 +306,7 @@ namespace MinecraftLauncher
             
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
-                NotificationManager.Show("CẢNH BÁO", "Vui lòng nhập tài khoản và mật khẩu!");
+                NotificationManager.Show(_isEnglish ? "WARNING" : "CẢNH BÁO", _isEnglish ? "Please enter username and password!" : "Vui lòng nhập tài khoản và mật khẩu!");
                 return;
             }
 
@@ -233,7 +328,6 @@ namespace MinecraftLauncher
 
                 if (response.IsSuccessStatusCode && result != null && result.Success)
                 {
-                    // === THÊM: LƯU TÀI KHOẢN & MẬT KHẨU (ĐÃ MÃ HÓA) NẾU CÓ TICK ===
                     if (chkRememberMe.IsChecked == true)
                     {
                         var newSession = new UserSession
@@ -247,7 +341,6 @@ namespace MinecraftLauncher
                     {
                         if (File.Exists(SESSION_FILE)) File.Delete(SESSION_FILE);
                     }
-                    // ==============================================================
 
                     this.IsHitTestVisible = false;
 
@@ -268,13 +361,13 @@ namespace MinecraftLauncher
                 else
                 {
                     ShowLoading(false);
-                    NotificationManager.Show("LỖI", result?.Message ?? "Tài khoản hoặc mật khẩu sai!");
+                    NotificationManager.Show(_isEnglish ? "ERROR" : "LỖI", result?.Message ?? (_isEnglish ? "Incorrect username or password!" : "Tài khoản hoặc mật khẩu sai!"));
                 }
             }
             catch (Exception ex)
             {
                 ShowLoading(false);
-                NotificationManager.Show("LỖI KẾT NỐI", ex.Message);
+                NotificationManager.Show(_isEnglish ? "CONNECTION ERROR" : "LỖI KẾT NỐI", ex.Message);
             }
         }
 
@@ -288,13 +381,13 @@ namespace MinecraftLauncher
 
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(pass))
             {
-                NotificationManager.Show("CẢNH BÁO", "Vui lòng nhập đầy đủ thông tin!");
+                NotificationManager.Show(_isEnglish ? "WARNING" : "CẢNH BÁO", _isEnglish ? "Please fill in all details!" : "Vui lòng nhập đầy đủ thông tin!");
                 return;
             }
 
             if (pass != confirm)
             {
-                NotificationManager.Show("LỖI", "Mật khẩu xác nhận không khớp!");
+                NotificationManager.Show(_isEnglish ? "ERROR" : "LỖI", _isEnglish ? "Confirm password does not match!" : "Mật khẩu xác nhận không khớp!");
                 return;
             }
 
@@ -303,7 +396,7 @@ namespace MinecraftLauncher
             try
             {
                 btn.IsEnabled = false;
-                btn.Content = "ĐANG TẠO...";
+                btn.Content = _isEnglish ? "CREATING..." : "ĐANG TẠO...";
 
                 await Task.Delay(1500);
 
@@ -319,22 +412,22 @@ namespace MinecraftLauncher
 
                 if (response.IsSuccessStatusCode && result != null && result.Success)
                 {
-                    NotificationManager.Show("THÀNH CÔNG", $"Tạo tài khoản {username} thành công!");
+                    NotificationManager.Show(_isEnglish ? "SUCCESS" : "THÀNH CÔNG", _isEnglish ? $"Account {username} created successfully!" : $"Tạo tài khoản {username} thành công!");
                     ReturnToLogin(); 
                 }
                 else
                 {
-                    NotificationManager.Show("LỖI", result?.Message ?? "Tên tài khoản hoặc Email đã tồn tại!");
+                    NotificationManager.Show(_isEnglish ? "ERROR" : "LỖI", result?.Message ?? (_isEnglish ? "Username or Email already exists!" : "Tên tài khoản hoặc Email đã tồn tại!"));
                 }
             }
             catch (Exception ex)
             {
-                NotificationManager.Show("LỖI KẾT NỐI", ex.Message);
+                NotificationManager.Show(_isEnglish ? "CONNECTION ERROR" : "LỖI KẾT NỐI", ex.Message);
             }
             finally
             {
                 btn.IsEnabled = true;
-                btn.Content = "TẠO TÀI KHOẢN";
+                btn.Content = GetLang("btnRegister");
             }
         }
 
@@ -346,7 +439,7 @@ namespace MinecraftLauncher
             
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(email))
             {
-                NotificationManager.Show("CẢNH BÁO", "Vui lòng nhập Tên tài khoản và Email!");
+                NotificationManager.Show(_isEnglish ? "WARNING" : "CẢNH BÁO", _isEnglish ? "Please enter Username and Email!" : "Vui lòng nhập Tên tài khoản và Email!");
                 return;
             }
 
@@ -355,7 +448,7 @@ namespace MinecraftLauncher
             try
             {
                 btn.IsEnabled = false;
-                btn.Content = "ĐANG GỬI MÃ...";
+                btn.Content = _isEnglish ? "SENDING CODE..." : "ĐANG GỬI MÃ...";
 
                 await Task.Delay(1500);
 
@@ -371,22 +464,22 @@ namespace MinecraftLauncher
 
                 if (response.IsSuccessStatusCode && result != null && result.Success)
                 {
-                    NotificationManager.Show("GỬI MÃ OTP", $"Mã xác nhận đã được gửi đến email: {email}");
+                    NotificationManager.Show(_isEnglish ? "OTP SENT" : "GỬI MÃ OTP", _isEnglish ? $"Verification code sent to email: {email}" : $"Mã xác nhận đã được gửi đến email: {email}");
                     AnimateTransition(pnlRecoveryStep1, pnlRecoveryStep2);
                 }
                 else
                 {
-                    NotificationManager.Show("LỖI", result?.Message ?? "Thông tin tài khoản không hợp lệ!");
+                    NotificationManager.Show(_isEnglish ? "ERROR" : "LỖI", result?.Message ?? (_isEnglish ? "Invalid account details!" : "Thông tin tài khoản không hợp lệ!"));
                 }
             }
             catch (Exception ex)
             {
-                NotificationManager.Show("LỖI KẾT NỐI", ex.Message);
+                NotificationManager.Show(_isEnglish ? "CONNECTION ERROR" : "LỖI KẾT NỐI", ex.Message);
             }
             finally
             {
                 btn.IsEnabled = true;
-                btn.Content = "GỬI MÃ KHÔI PHỤC";
+                btn.Content = GetLang("btnSendCode");
             }
         }
 
@@ -399,13 +492,13 @@ namespace MinecraftLauncher
 
             if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(newPass))
             {
-                NotificationManager.Show("CẢNH BÁO", "Vui lòng nhập Mã xác nhận và Mật khẩu mới!");
+                NotificationManager.Show(_isEnglish ? "WARNING" : "CẢNH BÁO", _isEnglish ? "Please enter Verification Code and New Password!" : "Vui lòng nhập Mã xác nhận và Mật khẩu mới!");
                 return;
             }
 
             if (newPass != confirmPass)
             {
-                NotificationManager.Show("LỖI", "Mật khẩu xác nhận không khớp!");
+                NotificationManager.Show(_isEnglish ? "ERROR" : "LỖI", _isEnglish ? "Confirm password does not match!" : "Mật khẩu xác nhận không khớp!");
                 return;
             }
 
@@ -414,7 +507,7 @@ namespace MinecraftLauncher
             try
             {
                 btn.IsEnabled = false;
-                btn.Content = "ĐANG ĐỔI MẬT KHẨU...";
+                btn.Content = _isEnglish ? "CHANGING PASSWORD..." : "ĐANG ĐỔI MẬT KHẨU...";
 
                 await Task.Delay(1500);
 
@@ -430,27 +523,26 @@ namespace MinecraftLauncher
 
                 if (response.IsSuccessStatusCode && result != null && result.Success)
                 {
-                    NotificationManager.Show("THÀNH CÔNG", "Đổi mật khẩu thành công! Hãy đăng nhập lại.");
+                    NotificationManager.Show(_isEnglish ? "SUCCESS" : "THÀNH CÔNG", _isEnglish ? "Password reset successfully! Please login." : "Đổi mật khẩu thành công! Hãy đăng nhập lại.");
                     ReturnToLogin();
                 }
                 else
                 {
-                    NotificationManager.Show("LỖI", result?.Message ?? "Mã OTP không chính xác hoặc đã hết hạn!");
+                    NotificationManager.Show(_isEnglish ? "ERROR" : "LỖI", result?.Message ?? (_isEnglish ? "OTP code is incorrect or expired!" : "Mã OTP không chính xác hoặc đã hết hạn!"));
                 }
             }
             catch (Exception ex)
             {
-                NotificationManager.Show("LỖI KẾT NỐI", ex.Message);
+                NotificationManager.Show(_isEnglish ? "CONNECTION ERROR" : "LỖI KẾT NỐI", ex.Message);
             }
             finally
             {
                 btn.IsEnabled = true;
-                btn.Content = "ĐỔI MẬT KHẨU";
+                btn.Content = GetLang("btnConfirmReset");
             }
         }
     }
 
-    // === THÊM: Lớp dữ liệu hỗ trợ Ghi Nhớ Đăng Nhập ===
     public class UserSession
     {
         public string Username { get; set; }

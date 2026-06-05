@@ -110,5 +110,27 @@ namespace MinecraftLauncher
                 top -= SPACING;
             }
         }
+
+        // Hàm mới: Trả về True nếu chọn Đồng Ý, False nếu chọn Hủy Bỏ
+        public static bool ShowConfirm(string title, string message)
+        {
+            bool isConfirm = false;
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                ConfirmWindow confirmWin = new ConfirmWindow(title, message);
+                
+                // Neo cửa sổ Confirm vào giữa cửa sổ chính đang mở
+                if (Application.Current.MainWindow != null && Application.Current.MainWindow.IsVisible)
+                {
+                    confirmWin.Owner = Application.Current.MainWindow;
+                }
+                
+                // Mở dạng Dialog (Buộc người dùng phải tương tác mới cho dùng tiếp app)
+                confirmWin.ShowDialog();
+                
+                isConfirm = confirmWin.Result;
+            });
+            return isConfirm;
+        }
     }
 }

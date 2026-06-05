@@ -12,1089 +12,577 @@
         ResizeMode="NoResize"
         Loaded="Window_Loaded">
 
-        <Window.Resources>
-                <Style x:Key="ScrollBarThumb"
-                       TargetType="Thumb">
-                        <Setter Property="OverridesDefaultStyle"
-                                Value="true"/>
-                        <Setter Property="IsTabStop"
-                                Value="false"/>
-                        <Setter Property="Template">
-                                <Setter.Value>
-                                        <ControlTemplate TargetType="Thumb">
-                                                <Border x:Name="rectangle"
-                                                        CornerRadius="3"
-                                                        Background="#F36895"
-                                                        Width="6"/>
-                                                <ControlTemplate.Triggers>
-                                                        <Trigger Property="IsMouseOver"
-                                                                 Value="true">
-                                                                <Setter TargetName="rectangle"
-                                                                        Property="Background"
-                                                                        Value="#FA8EB1"/>
-                                                        </Trigger>
-                                                </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                </Setter.Value>
-                        </Setter>
-                </Style>
+    <Window.Resources>
+        <Style x:Key="ScrollBarThumb" TargetType="Thumb">
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="IsTabStop" Value="false"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border x:Name="rectangle" CornerRadius="3" Background="#F36895" Width="6"/>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter TargetName="rectangle" Property="Background" Value="#FA8EB1"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-                <Style x:Key="SakuraScroll"
-                       TargetType="ScrollBar">
-                        <Setter Property="Width"
-                                Value="8"/>
-                        <Setter Property="OverridesDefaultStyle"
-                                Value="true"/>
-                        <Setter Property="Template">
-                                <Setter.Value>
-                                        <ControlTemplate TargetType="ScrollBar">
-                                                <Grid x:Name="Bg"
-                                                      SnapsToDevicePixels="true"
-                                                      Background="Transparent">
-                                                        <Border CornerRadius="3"
-                                                                Background="#20FFFFFF"
-                                                                Margin="1,0"/>
-                                                        <Track x:Name="PART_Track"
-                                                               IsDirectionReversed="true"
-                                                               IsEnabled="{TemplateBinding IsEnabled}">
-                                                                <Track.Thumb>
-                                                                        <Thumb Style="{StaticResource ScrollBarThumb}"/>
-                                                                </Track.Thumb>
-                                                        </Track>
-                                                </Grid>
-                                        </ControlTemplate>
-                                </Setter.Value>
-                        </Setter>
-                </Style>
+        <Style x:Key="SakuraScroll" TargetType="ScrollBar">
+            <Setter Property="Width" Value="8"/>
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid x:Name="Bg" SnapsToDevicePixels="true" Background="Transparent">
+                            <Border CornerRadius="3" Background="#20FFFFFF" Margin="1,0"/>
+                            <Track x:Name="PART_Track" IsDirectionReversed="true" IsEnabled="{TemplateBinding IsEnabled}">
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource ScrollBarThumb}"/>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-                <Style x:Key="SakuraScrollViewer"
-                       TargetType="ScrollViewer">
-                        <Setter Property="Template">
-                                <Setter.Value>
-                                        <ControlTemplate TargetType="ScrollViewer">
-                                                <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*"/>
-                                                                <ColumnDefinition Width="Auto"/>
-                                                        </Grid.ColumnDefinitions>
-                                                        <ScrollContentPresenter Grid.Column="0"/>
-                                                        <ScrollBar x:Name="PART_VerticalScrollBar"
-                                                                   Grid.Column="1"
-                                                                   Value="{TemplateBinding VerticalOffset}"
-                                                                   Maximum="{TemplateBinding ScrollableHeight}"
-                                                                   ViewportSize="{TemplateBinding ViewportHeight}"
-                                                                   Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
-                                                                   Style="{StaticResource SakuraScroll}"/>
-                                                </Grid>
-                                        </ControlTemplate>
-                                </Setter.Value>
-                        </Setter>
-                </Style>
-
-                <Style x:Key="TopTabButton"
-                       TargetType="RadioButton">
-                        <Setter Property="Background"
-                                Value="Transparent"/>
-                        <Setter Property="Foreground"
-                                Value="#94A3B8"/>
-                        <Setter Property="FontSize"
-                                Value="15"/>
-                        <Setter Property="FontWeight"
-                                Value="Bold"/>
-                        <Setter Property="Cursor"
-                                Value="Hand"/>
-                        <Setter Property="Margin"
-                                Value="10,0"/>
-                        <Setter Property="Template">
-                                <Setter.Value>
-                                        <ControlTemplate TargetType="RadioButton">
-                                                <Grid Background="Transparent">
-                                                        <ContentPresenter HorizontalAlignment="Center"
-                                                                          VerticalAlignment="Center"
-                                                                          Margin="10,0"/>
-                                                        <Border x:Name="ActiveIndicator"
-                                                                Height="3"
-                                                                Background="#F36895"
-                                                                VerticalAlignment="Bottom"
-                                                                Visibility="Collapsed"/>
-                                                </Grid>
-                                                <ControlTemplate.Triggers>
-                                                        <Trigger Property="IsMouseOver"
-                                                                 Value="True">
-                                                                <Setter Property="Foreground"
-                                                                        Value="#FFFFFF"/>
-                                                        </Trigger>
-                                                        <Trigger Property="IsChecked"
-                                                                 Value="True">
-                                                                <Setter Property="Foreground"
-                                                                        Value="#F36895"/>
-                                                                <Setter TargetName="ActiveIndicator"
-                                                                        Property="Visibility"
-                                                                        Value="Visible"/>
-                                                        </Trigger>
-                                                </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                </Setter.Value>
-                        </Setter>
-                </Style>
-
-                <Style x:Key="SidebarIconButton"
-                       TargetType="Button">
-                        <Setter Property="Background"
-                                Value="Transparent"/>
-                        <Setter Property="Foreground"
-                                Value="#94A3B8"/>
-                        <Setter Property="Width"
-                                Value="50"/>
-                        <Setter Property="Height"
-                                Value="50"/>
-                        <Setter Property="Cursor"
-                                Value="Hand"/>
-                        <Setter Property="Template">
-                                <Setter.Value>
-                                        <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}">
-                                                        <ContentPresenter HorizontalAlignment="Center"
-                                                                          VerticalAlignment="Center"/>
-                                                </Border>
-                                        </ControlTemplate>
-                                </Setter.Value>
-                        </Setter>
-                        <Style.Triggers>
-                                <Trigger Property="IsMouseOver"
-                                         Value="True">
-                                        <Setter Property="Foreground"
-                                                Value="#F36895"/>
-                                </Trigger>
-                        </Style.Triggers>
-                </Style>
-
-                <Style x:Key="SakuraProgressBar"
-                       TargetType="ProgressBar">
-                        <Setter Property="Foreground"
-                                Value="#F36895"/>
-                        <Setter Property="Background"
-                                Value="#33F36895"/>
-                        <Setter Property="BorderThickness"
-                                Value="0"/>
-                        <Setter Property="Template">
-                                <Setter.Value>
-                                        <ControlTemplate TargetType="ProgressBar">
-                                                <Grid>
-                                                        <Border x:Name="PART_Track"
-                                                                Background="{TemplateBinding Background}"
-                                                                CornerRadius="4"/>
-                                                        <Border x:Name="PART_Indicator"
-                                                                Background="{TemplateBinding Foreground}"
-                                                                CornerRadius="4"
-                                                                HorizontalAlignment="Left"/>
-                                                </Grid>
-                                        </ControlTemplate>
-                                </Setter.Value>
-                        </Setter>
-                </Style>
-
-                <Style x:Key="PlayButton"
-                       TargetType="Button">
-                        <Setter Property="Background"
-                                Value="#F2140A18"/>
-                        <Setter Property="Foreground"
-                                Value="#F36895"/>
-                        <Setter Property="BorderBrush"
-                                Value="#33F36895"/>
-                        <Setter Property="BorderThickness"
-                                Value="1"/>
-                        <Setter Property="FontWeight"
-                                Value="Bold"/>
-                        <Setter Property="FontSize"
-                                Value="24"/>
-                        <Setter Property="Cursor"
-                                Value="Hand"/>
-                        <Setter Property="Template">
-                                <Setter.Value>
-                                        <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}"
-                                                        BorderBrush="{TemplateBinding BorderBrush}"
-                                                        BorderThickness="{TemplateBinding BorderThickness}"
-                                                        CornerRadius="4">
-                                                        <Border.Effect>
-                                                                <DropShadowEffect Color="#F36895"
-                                                                                  BlurRadius="10"
-                                                                                  ShadowDepth="0"
-                                                                                  Opacity="0.2"/>
-                                                        </Border.Effect>
-                                                        <Grid>
-                                                                <Path Data="M 0,20 L 20,0 M 10,40 L 40,10"
-                                                                      Stroke="#11F36895"
-                                                                      StrokeThickness="2"
-                                                                      HorizontalAlignment="Left"
-                                                                      VerticalAlignment="Bottom"
-                                                                      Margin="10,0,0,10"/>
-                                                                <ContentPresenter HorizontalAlignment="Center"
-                                                                                  VerticalAlignment="Center"/>
-                                                        </Grid>
-                                                </Border>
-                                                <ControlTemplate.Triggers>
-                                                        <Trigger Property="IsMouseOver"
-                                                                 Value="True">
-                                                                <Setter Property="Background"
-                                                                        Value="#F36895"/>
-                                                                <Setter Property="Foreground"
-                                                                        Value="#FFFFFF"/>
-                                                                <Setter Property="BorderBrush"
-                                                                        Value="#FFFFFF"/>
-                                                        </Trigger>
-                                                        <Trigger Property="IsEnabled"
-                                                                 Value="False">
-                                                                <Setter Property="Opacity"
-                                                                        Value="0.5"/>
-                                                                <Setter Property="Cursor"
-                                                                        Value="Wait"/>
-                                                        </Trigger>
-                                                </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                </Setter.Value>
-                        </Setter>
-                </Style>
-
-                <Style x:Key="ProfileSubTabButton"
-                       TargetType="RadioButton">
-                        <Setter Property="Background"
-                                Value="Transparent"/>
-                        <Setter Property="Foreground"
-                                Value="#94A3B8"/>
-                        <Setter Property="FontSize"
-                                Value="14"/>
-                        <Setter Property="FontWeight"
-                                Value="Bold"/>
-                        <Setter Property="Padding"
-                                Value="15,12"/>
-                        <Setter Property="Margin"
-                                Value="0,0,0,8"/>
-                        <Setter Property="Cursor"
-                                Value="Hand"/>
-                        <Setter Property="Template">
-                                <Setter.Value>
-                                        <ControlTemplate TargetType="RadioButton">
-                                                <Border Background="{TemplateBinding Background}"
-                                                        CornerRadius="6">
-                                                        <Grid>
-                                                                <ContentPresenter Margin="{TemplateBinding Padding}"
-                                                                                  HorizontalAlignment="Left"
-                                                                                  VerticalAlignment="Center"/>
-                                                                <Border x:Name="Indicator"
-                                                                        Width="4"
-                                                                        Background="#F36895"
-                                                                        HorizontalAlignment="Left"
-                                                                        CornerRadius="2"
-                                                                        Visibility="Collapsed"
-                                                                        Margin="0,8"/>
-                                                        </Grid>
-                                                </Border>
-                                                <ControlTemplate.Triggers>
-                                                        <Trigger Property="IsMouseOver"
-                                                                 Value="True">
-                                                                <Setter Property="Background"
-                                                                        Value="#1AFFFFFF"/>
-                                                                <Setter Property="Foreground"
-                                                                        Value="#FFFFFF"/>
-                                                        </Trigger>
-                                                        <Trigger Property="IsChecked"
-                                                                 Value="True">
-                                                                <Setter Property="Background"
-                                                                        Value="#33F36895"/>
-                                                                <Setter Property="Foreground"
-                                                                        Value="#F36895"/>
-                                                                <Setter TargetName="Indicator"
-                                                                        Property="Visibility"
-                                                                        Value="Visible"/>
-                                                        </Trigger>
-                                                </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                </Setter.Value>
-                        </Setter>
-                </Style>
-
-                <Style TargetType="TextBox">
-                        <Setter Property="Background"
-                                Value="#4C000000"/>
-                        <Setter Property="Foreground"
-                                Value="White"/>
-                        <Setter Property="BorderBrush"
-                                Value="#33F36895"/>
-                        <Setter Property="BorderThickness"
-                                Value="1"/>
-                        <Setter Property="Padding"
-                                Value="15,0"/>
-                        <Setter Property="Height"
-                                Value="42"/>
-                        <Setter Property="VerticalContentAlignment"
-                                Value="Center"/>
-                        <Setter Property="CaretBrush"
-                                Value="#F36895"/>
-                        <Setter Property="FontSize"
-                                Value="13"/>
-                </Style>
-
-                <Style TargetType="PasswordBox">
-                        <Setter Property="Background"
-                                Value="#4C000000"/>
-                        <Setter Property="Foreground"
-                                Value="White"/>
-                        <Setter Property="BorderBrush"
-                                Value="#33F36895"/>
-                        <Setter Property="BorderThickness"
-                                Value="1"/>
-                        <Setter Property="Padding"
-                                Value="15,0"/>
-                        <Setter Property="Height"
-                                Value="42"/>
-                        <Setter Property="VerticalContentAlignment"
-                                Value="Center"/>
-                        <Setter Property="CaretBrush"
-                                Value="#F36895"/>
-                        <Setter Property="FontSize"
-                                Value="13"/>
-                </Style>
-
-                <Style x:Key="ProfileActionButton"
-                       TargetType="Button">
-                        <Setter Property="Background"
-                                Value="#F36895"/>
-                        <Setter Property="Foreground"
-                                Value="White"/>
-                        <Setter Property="FontWeight"
-                                Value="Bold"/>
-                        <Setter Property="Height"
-                                Value="42"/>
-                        <Setter Property="BorderThickness"
-                                Value="0"/>
-                        <Setter Property="Cursor"
-                                Value="Hand"/>
-                        <Setter Property="Template">
-                                <Setter.Value>
-                                        <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}"
-                                                        CornerRadius="4">
-                                                        <ContentPresenter HorizontalAlignment="Center"
-                                                                          VerticalAlignment="Center"/>
-                                                </Border>
-                                        </ControlTemplate>
-                                </Setter.Value>
-                        </Setter>
-                        <Style.Triggers>
-                                <Trigger Property="IsMouseOver"
-                                         Value="True">
-                                        <Setter Property="Background"
-                                                Value="#FA8EB1"/>
-                                </Trigger>
-                        </Style.Triggers>
-                </Style>
-
-                <Style x:Key="ProfileSecondaryActionButton"
-                       TargetType="Button">
-                        <Setter Property="Background"
-                                Value="#33F36895"/>
-                        <Setter Property="Foreground"
-                                Value="#F36895"/>
-                        <Setter Property="BorderBrush"
-                                Value="#4DF36895"/>
-                        <Setter Property="BorderThickness"
-                                Value="1"/>
-                        <Setter Property="FontWeight"
-                                Value="Bold"/>
-                        <Setter Property="Height"
-                                Value="42"/>
-                        <Setter Property="Cursor"
-                                Value="Hand"/>
-                        <Setter Property="Template">
-                                <Setter.Value>
-                                        <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}"
-                                                        BorderBrush="{TemplateBinding BorderBrush}"
-                                                        BorderThickness="{TemplateBinding BorderThickness}"
-                                                        CornerRadius="4">
-                                                        <ContentPresenter HorizontalAlignment="Center"
-                                                                          VerticalAlignment="Center"/>
-                                                </Border>
-                                        </ControlTemplate>
-                                </Setter.Value>
-                        </Setter>
-                        <Style.Triggers>
-                                <Trigger Property="IsMouseOver"
-                                         Value="True">
-                                        <Setter Property="Background"
-                                                Value="#F36895"/>
-                                        <Setter Property="Foreground"
-                                                Value="White"/>
-                                </Trigger>
-                                <Trigger Property="IsPressed"
-                                         Value="True">
-                                        <Setter Property="Background"
-                                                Value="#D8547C"/>
-                                </Trigger>
-                        </Style.Triggers>
-                </Style>
-
-                <Style x:Key="ProfileCancelButton"
-                       TargetType="Button">
-                        <Setter Property="Background"
-                                Value="#33FF4D4D"/>
-                        <Setter Property="Foreground"
-                                Value="#FF4D4D"/>
-                        <Setter Property="BorderBrush"
-                                Value="#4DFF4D4D"/>
-                        <Setter Property="BorderThickness"
-                                Value="1"/>
-                        <Setter Property="FontWeight"
-                                Value="Bold"/>
-                        <Setter Property="Height"
-                                Value="42"/>
-                        <Setter Property="Cursor"
-                                Value="Hand"/>
-                        <Setter Property="Template">
-                                <Setter.Value>
-                                        <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}"
-                                                        BorderBrush="{TemplateBinding BorderBrush}"
-                                                        BorderThickness="{TemplateBinding BorderThickness}"
-                                                        CornerRadius="4">
-                                                        <ContentPresenter HorizontalAlignment="Center"
-                                                                          VerticalAlignment="Center"/>
-                                                </Border>
-                                        </ControlTemplate>
-                                </Setter.Value>
-                        </Setter>
-                        <Style.Triggers>
-                                <Trigger Property="IsMouseOver"
-                                         Value="True">
-                                        <Setter Property="Background"
-                                                Value="#FF4D4D"/>
-                                        <Setter Property="Foreground"
-                                                Value="White"/>
-                                </Trigger>
-                                <Trigger Property="IsPressed"
-                                         Value="True">
-                                        <Setter Property="Background"
-                                                Value="#CC0000"/>
-                                </Trigger>
-                        </Style.Triggers>
-                </Style>
-        </Window.Resources>
-
-        <Grid Background="#150B1A">
-                <Image Source="pack://application:,,,/Assets/bg.png"
-                       Stretch="UniformToFill"/>
-                <Rectangle Fill="#B3000000"/>
-
-                <Grid>
-                        <Grid.RowDefinitions>
-                                <RowDefinition Height="60"/>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="140"/>
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
+        <Style x:Key="SakuraScrollViewer" TargetType="ScrollViewer">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollViewer">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="60"/>
-                        </Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ScrollContentPresenter Grid.Column="0"/>
+                            <ScrollBar x:Name="PART_VerticalScrollBar" Grid.Column="1" Value="{TemplateBinding VerticalOffset}" Maximum="{TemplateBinding ScrollableHeight}" ViewportSize="{TemplateBinding ViewportHeight}" Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" Style="{StaticResource SakuraScroll}"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-                        <Border Grid.Row="0"
-                                Grid.ColumnSpan="2"
-                                Background="#800F0812"
-                                BorderBrush="#33F36895"
-                                BorderThickness="0,0,0,1">
-                                <Grid>
-                                        <Border Background="Transparent"
-                                                MouseLeftButtonDown="TopBar_MouseLeftButtonDown"/>
-                                        <StackPanel Orientation="Horizontal"
-                                                    Margin="20,0,0,0">
-                                                <TextBlock Text="OTONASHIREI"
-                                                           Foreground="White"
-                                                           FontSize="20"
-                                                           FontWeight="Black"
-                                                           VerticalAlignment="Center"/>
-                                                <TextBlock Text=" MCSERVER"
-                                                           Foreground="#F36895"
-                                                           FontSize="20"
-                                                           FontWeight="Black"
-                                                           VerticalAlignment="Center"
-                                                           Margin="0,0,40,0"/>
-                                                <RadioButton Content="TRANG CHỦ"
-                                                             Style="{StaticResource TopTabButton}"
-                                                             IsChecked="True"
-                                                             Checked="TabHome_Checked"/>
-                                                <RadioButton Content="NHÂN VẬT"
-                                                             Style="{StaticResource TopTabButton}"
-                                                             Checked="TabProfile_Checked"/>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal"
-                                                    HorizontalAlignment="Right"
-                                                    VerticalAlignment="Top">
-                                                <Button Content="—"
-                                                        Width="40"
-                                                        Height="30"
-                                                        Background="Transparent"
-                                                        Foreground="#94A3B8"
-                                                        BorderThickness="0"
-                                                        Cursor="Hand"
-                                                        Click="MinimizeButton_Click"/>
-                                                <Button Content="✕"
-                                                        Width="40"
-                                                        Height="30"
-                                                        Background="Transparent"
-                                                        Foreground="#94A3B8"
-                                                        BorderThickness="0"
-                                                        Cursor="Hand"
-                                                        Click="CloseButton_Click"/>
-                                        </StackPanel>
-                                </Grid>
+        <Style x:Key="TopTabButton" TargetType="RadioButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="10,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,0"/>
+                            <Border x:Name="ActiveIndicator" Height="3" Background="#F36895" VerticalAlignment="Bottom" Visibility="Collapsed"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Foreground" Value="#F36895"/>
+                                <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SakuraProgressBar" TargetType="ProgressBar">
+            <Setter Property="Foreground" Value="#F36895"/>
+            <Setter Property="Background" Value="#33F36895"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Grid>
+                            <Border x:Name="PART_Track" Background="{TemplateBinding Background}" CornerRadius="4"/>
+                            <Border x:Name="PART_Indicator" Background="{TemplateBinding Foreground}" CornerRadius="4" HorizontalAlignment="Left"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PlayButton" TargetType="Button">
+            <Setter Property="Background" Value="#F2140A18"/>
+            <Setter Property="Foreground" Value="#F36895"/>
+            <Setter Property="BorderBrush" Value="#33F36895"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#F36895" BlurRadius="10" ShadowDepth="0" Opacity="0.2"/>
+                            </Border.Effect>
+                            <Grid>
+                                <Path Data="M 0,20 L 20,0 M 10,40 L 40,10" Stroke="#11F36895" StrokeThickness="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="10,0,0,10"/>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#F36895"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                                <Setter Property="BorderBrush" Value="#FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                                <Setter Property="Cursor" Value="Wait"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-                        <StackPanel Grid.Row="1"
-                                    Grid.Column="1"
-                                    VerticalAlignment="Top"
-                                    Margin="0,20,0,0"
-                                    Panel.ZIndex="10">
-                                <Button Style="{StaticResource SidebarIconButton}"
-                                        ToolTip="Cài đặt">
-                                        <Path Data="M 19.4,13 C 19.5,12.7 19.5,12.3 19.5,12 C 19.5,11.7 19.5,11.3 19.4,11 L 21.5,9.3 C 21.7,9.2 21.8,8.9 21.7,8.7 L 19.7,5.3 C 19.6,5.1 19.3,5 19.1,5.1 L 16.6,6.1 C 16.1,5.7 15.5,5.4 14.9,5.2 L 14.5,2.5 C 14.5,2.2 14.3,2 14,2 L 10,2 C 9.7,2 9.5,2.2 9.5,2.5 L 9.1,5.2 C 8.5,5.4 7.9,5.7 7.4,6.1 L 4.9,5.1 C 4.7,5 4.4,5.1 4.3,5.3 L 2.3,8.7 C 2.2,8.9 2.3,9.2 2.5,9.3 L 4.6,11 C 4.5,11.3 4.5,11.7 4.5,12 C 4.5,12.3 4.5,12.7 4.6,13 L 2.5,14.7 C 2.3,14.8 2.2,15.1 2.3,15.3 L 4.3,18.7 C 4.4,18.9 4.7,19 4.9,18.9 L 7.4,17.9 C 7.9,18.3 8.5,18.6 9.1,18.8 L 9.5,21.5 C 9.5,21.8 9.7,22 10,22 L 14,22 C 14.3,22 14.5,21.8 14.5,21.5 L 14.9,18.8 C 15.5,18.6 16.1,18.3 16.6,17.9 L 19.1,18.9 C 19.3,19 19.6,18.9 19.7,18.7 L 21.7,15.3 C 21.8,15.1 21.7,14.8 21.5,14.7 L 19.4,13 Z M 12,15.5 C 10.1,15.5 8.5,13.9 8.5,12 C 8.5,10.1 10.1,8.5 12,8.5 C 13.9,8.5 15.5,10.1 15.5,12 C 15.5,13.9 13.9,15.5 12,15.5 Z"
-                                              Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                              Stretch="Uniform"
-                                              Width="22"
-                                              Height="22"/>
-                                </Button>
-                                <Button Style="{StaticResource SidebarIconButton}"
-                                        ToolTip="Đăng xuất"
-                                        Click="LogoutButton_Click"
-                                        Margin="0,15,0,0">
-                                        <Path Data="M 6,2 L 14,2 C 15.1,2 16,2.9 16,4 L 16,9 L 14,9 L 14,4 L 6,4 L 6,20 L 14,20 L 14,15 L 16,15 L 16,20 C 16,21.1 15.1,22 14,22 L 6,22 C 4.9,22 4,21.1 4,20 L 4,4 C 4,2.9 4.9,2 6,2 Z M 12,16 L 10.6,14.6 L 12.2,13 L 8,13 L 8,11 L 12.2,11 L 10.6,9.4 L 12,8 L 16,12 Z"
-                                              Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                              Stretch="Uniform"
-                                              Width="20"
-                                              Height="20"/>
-                                </Button>
+        <Style x:Key="ProfileSubTabButton" TargetType="RadioButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="15,12"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                            <Grid>
+                                <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                <Border x:Name="Indicator" Width="4" Background="#F36895" HorizontalAlignment="Left" CornerRadius="2" Visibility="Collapsed" Margin="0,8"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1AFFFFFF"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Background" Value="#33F36895"/>
+                                <Setter Property="Foreground" Value="#F36895"/>
+                                <Setter TargetName="Indicator" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="#4C000000"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#33F36895"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="15,0"/>
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="CaretBrush" Value="#F36895"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <Style TargetType="PasswordBox">
+            <Setter Property="Background" Value="#4C000000"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#33F36895"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="15,0"/>
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="CaretBrush" Value="#F36895"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <Style x:Key="ProfileActionButton" TargetType="Button">
+            <Setter Property="Background" Value="#F36895"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#FA8EB1"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ProfileSecondaryActionButton" TargetType="Button">
+            <Setter Property="Background" Value="#33F36895"/>
+            <Setter Property="Foreground" Value="#F36895"/>
+            <Setter Property="BorderBrush" Value="#4DF36895"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F36895"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#D8547C"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ProfileCancelButton" TargetType="Button">
+            <Setter Property="Background" Value="#33FF4D4D"/>
+            <Setter Property="Foreground" Value="#FF4D4D"/>
+            <Setter Property="BorderBrush" Value="#4DFF4D4D"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#FF4D4D"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#CC0000"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid Background="#150B1A">
+        <Image Source="pack://application:,,,/Assets/bg.png" Stretch="UniformToFill"/>
+        <Rectangle Fill="#B3000000"/>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="60"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="140"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="130"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Row="0" Grid.ColumnSpan="2" Background="#800F0812" BorderBrush="#33F36895" BorderThickness="0,0,0,1">
+                <Grid>
+                    <Border Background="Transparent" MouseLeftButtonDown="TopBar_MouseLeftButtonDown"/>
+                    <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
+                        <TextBlock Text="OTONASHIREI" Foreground="White" FontSize="20" FontWeight="Black" VerticalAlignment="Center"/>
+                        <TextBlock Text=" MCSERVER" Foreground="#F36895" FontSize="20" FontWeight="Black" VerticalAlignment="Center" Margin="0,0,40,0"/>
+                        <RadioButton x:Name="radTabHome" Content="TRANG CHỦ" Style="{StaticResource TopTabButton}" IsChecked="True" Checked="TabHome_Checked"/>
+                        <RadioButton x:Name="radTabProfile" Content="NHÂN VẬT" Style="{StaticResource TopTabButton}" Checked="TabProfile_Checked"/>
+                        <!-- TAB CÀI ĐẶT MỚI THÊM -->
+                        <RadioButton x:Name="radTabSettings" Content="CÀI ĐẶT" Style="{StaticResource TopTabButton}" Checked="TabSettings_Checked"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                        <Button x:Name="btnUpdateClient" Content="⬇ CẬP NHẬT" Margin="0,0,15,0" Padding="10,0" Height="26" Background="#334ADE80" Foreground="#4ADE80" BorderThickness="1" BorderBrush="#4ADE80" FontWeight="Bold" FontSize="11" Cursor="Hand" Click="btnUpdateClient_Click" Visibility="Collapsed" VerticalAlignment="Center">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+
+                        <Button Content="—" Width="40" Height="30" Background="Transparent" Foreground="#94A3B8" BorderThickness="0" Cursor="Hand" Click="MinimizeButton_Click"/>
+                        <Button Content="✕" Width="40" Height="30" Background="Transparent" Foreground="#94A3B8" BorderThickness="0" Cursor="Hand" Click="CloseButton_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- GIAO DIỆN TRANG CHỦ -->
+            <Grid x:Name="ViewHome" Grid.Row="1" Grid.ColumnSpan="2" Visibility="Visible">
+                <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="30,30,0,0" Width="380" Height="340" Background="#990F0812" BorderBrush="#22F36895" BorderThickness="1" CornerRadius="6">
+                    <Grid Margin="15,15,5,15">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                            <TextBlock x:Name="lblSyncServer" Text="ĐỒNG BỘ MÁY CHỦ" Foreground="#F36895" FontSize="14" FontWeight="Black"/>
+                            <TextBlock x:Name="txtTotalMods" Text="Đang đọc manifest..." Foreground="#94A3B8" FontSize="11" Margin="0,3,0,0"/>
                         </StackPanel>
 
+                        <ScrollViewer Grid.Row="1" Style="{StaticResource SakuraScrollViewer}" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="icModsList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="#15F36895" BorderThickness="0,0,0,1" Padding="0,8" Margin="0,0,10,0">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding StatusIcon}" Foreground="{Binding StatusColor}" FontSize="12" FontWeight="Bold" VerticalAlignment="Center" Margin="5,0,12,0"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding FileName}" Foreground="#E2D4E6" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
 
-                        <Grid x:Name="ViewHome"
-                              Grid.Row="1"
-                              Grid.ColumnSpan="2"
-                              Visibility="Visible">
-                                <Border HorizontalAlignment="Left"
-                                        VerticalAlignment="Top"
-                                        Margin="30,30,0,0"
-                                        Width="380"
-                                        Height="340"
-                                        Background="#990F0812"
-                                        BorderBrush="#22F36895"
-                                        BorderThickness="1"
-                                        CornerRadius="6">
-                                        <Grid Margin="15,15,5,15">
-                                                <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="*"/>
-                                                </Grid.RowDefinitions>
-                                                <StackPanel Grid.Row="0"
-                                                            Margin="0,0,0,12">
-                                                        <TextBlock Text="ĐỒNG BỘ MÁY CHỦ"
-                                                                   Foreground="#F36895"
-                                                                   FontSize="14"
-                                                                   FontWeight="Black"/>
-                                                        <TextBlock x:Name="txtTotalMods"
-                                                                   Text="Đang đọc manifest..."
-                                                                   Foreground="#94A3B8"
-                                                                   FontSize="11"
-                                                                   Margin="0,3,0,0"/>
-                                                </StackPanel>
+                <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="30,0,0,20">
+                    <TextBlock x:Name="lblHello" Text="XIN CHÀO BẠN," Foreground="#BFA6C4" FontSize="16" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="txtUsername" Text="[Username]" Foreground="White" FontSize="40" FontWeight="Black"/>
+                </StackPanel>
+            </Grid>
 
-                                                <ScrollViewer Grid.Row="1"
-                                                              Style="{StaticResource SakuraScrollViewer}"
-                                                              VerticalScrollBarVisibility="Auto">
-                                                        <ItemsControl x:Name="icModsList">
-                                                                <ItemsControl.ItemTemplate>
-                                                                        <DataTemplate>
-                                                                                <Border BorderBrush="#15F36895"
-                                                                                        BorderThickness="0,0,0,1"
-                                                                                        Padding="0,8"
-                                                                                        Margin="0,0,10,0">
-                                                                                        <Grid>
-                                                                                                <Grid.ColumnDefinitions>
-                                                                                                        <ColumnDefinition Width="Auto"/>
-                                                                                                        <ColumnDefinition Width="*"/>
-                                                                                                </Grid.ColumnDefinitions>
-                                                                                                <!-- Icon trạng thái (✔ / ❌) và Màu sắc tự động thay đổi -->
-                                                                                                <TextBlock Grid.Column="0"
-                                                                                                           Text="{Binding StatusIcon}"
-                                                                                                           Foreground="{Binding StatusColor}"
-                                                                                                           FontSize="12"
-                                                                                                           FontWeight="Bold"
-                                                                                                           VerticalAlignment="Center"
-                                                                                                           Margin="5,0,12,0"/>
-                                                                                                <!-- Tên File -->
-                                                                                                <TextBlock Grid.Column="1"
-                                                                                                           Text="{Binding FileName}"
-                                                                                                           Foreground="#E2D4E6"
-                                                                                                           FontSize="12"
-                                                                                                           VerticalAlignment="Center"
-                                                                                                           TextTrimming="CharacterEllipsis"/>
-                                                                                        </Grid>
-                                                                                </Border>
-                                                                        </DataTemplate>
-                                                                </ItemsControl.ItemTemplate>
-                                                        </ItemsControl>
-                                                </ScrollViewer>
-                                        </Grid>
-                                </Border>
+            <!-- GIAO DIỆN TRANG NHÂN VẬT -->
+            <Grid x:Name="ViewProfile" Grid.Row="1" Grid.ColumnSpan="2" Visibility="Collapsed" Margin="30,30,80,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="230"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-                                <StackPanel VerticalAlignment="Bottom"
-                                            HorizontalAlignment="Left"
-                                            Margin="30,0,0,20">
-                                        <TextBlock Text="XIN CHÀO BẠN,"
-                                                   Foreground="#BFA6C4"
-                                                   FontSize="16"
-                                                   FontWeight="SemiBold"/>
-                                        <TextBlock x:Name="txtUsername"
-                                                   Text="[Username]"
-                                                   Foreground="White"
-                                                   FontSize="40"
-                                                   FontWeight="Black"/>
-                                </StackPanel>
-                        </Grid>
+                <Border Grid.Column="0" Background="#990F0812" BorderBrush="#22F36895" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,20,20">
+                    <StackPanel>
+                        <TextBlock x:Name="lblAccountSettings" Text="CÀI ĐẶT TÀI KHOẢN" Foreground="#BFA6C4" FontSize="12" FontWeight="Bold" Margin="10,10,0,15"/>
+                        <RadioButton x:Name="radSubTabInfo" Content="Thông tin chung" Style="{StaticResource ProfileSubTabButton}" IsChecked="True" Checked="SubTabInfo_Checked"/>
+                        <RadioButton x:Name="radSubTabSkin" Content="Thay đổi Skin" Style="{StaticResource ProfileSubTabButton}" Checked="SubTabSkin_Checked"/>
+                        <RadioButton x:Name="radSubTabEmail" Content="Đổi Email bảo mật" Style="{StaticResource ProfileSubTabButton}" Checked="SubTabEmail_Checked"/>
+                        <RadioButton x:Name="radSubTabPassword" Content="Đổi mật khẩu" Style="{StaticResource ProfileSubTabButton}" Checked="SubTabPassword_Checked"/>
+                    </StackPanel>
+                </Border>
 
+                <Border Grid.Column="1" Background="#990F0812" BorderBrush="#22F36895" BorderThickness="1" CornerRadius="6" Padding="40" Margin="0,0,0,20">
+                    <Grid>
+                        <StackPanel x:Name="pnlProfileInfo" Visibility="Visible">
+                            <TextBlock x:Name="lblAccountInfoTitle" Text="THÔNG TIN TÀI KHOẢN" Foreground="#F36895" FontSize="22" FontWeight="Black" Margin="0,0,0,30"/>
 
-                        <Grid x:Name="ViewProfile"
-                              Grid.Row="1"
-                              Grid.ColumnSpan="2"
-                              Visibility="Collapsed"
-                              Margin="30,30,80,0">
+                            <Grid Margin="0,0,0,30">
                                 <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="230"/>
-                                        <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-
-                                <Border Grid.Column="0"
-                                        Background="#990F0812"
-                                        BorderBrush="#22F36895"
-                                        BorderThickness="1"
-                                        CornerRadius="6"
-                                        Padding="10"
-                                        Margin="0,0,20,20">
-                                        <StackPanel>
-                                                <TextBlock Text="CÀI ĐẶT TÀI KHOẢN"
-                                                           Foreground="#BFA6C4"
-                                                           FontSize="12"
-                                                           FontWeight="Bold"
-                                                           Margin="10,10,0,15"/>
-                                                <RadioButton Content="Thông tin chung"
-                                                             Style="{StaticResource ProfileSubTabButton}"
-                                                             IsChecked="True"
-                                                             Checked="SubTabInfo_Checked"/>
-                                                <RadioButton Content="Thay đổi Skin"
-                                                             Style="{StaticResource ProfileSubTabButton}"
-                                                             Checked="SubTabSkin_Checked"/>
-                                                <RadioButton Content="Đổi Email bảo mật"
-                                                             Style="{StaticResource ProfileSubTabButton}"
-                                                             Checked="SubTabEmail_Checked"/>
-                                                <RadioButton Content="Đổi mật khẩu"
-                                                             Style="{StaticResource ProfileSubTabButton}"
-                                                             Checked="SubTabPassword_Checked"/>
-                                        </StackPanel>
+                                <Border Width="80" Height="80" CornerRadius="40" Background="#33F36895" BorderBrush="#F36895" BorderThickness="2">
+                                    <Grid>
+                                        <Grid.Clip>
+                                            <EllipseGeometry RadiusX="38" RadiusY="38" Center="38,38"/>
+                                        </Grid.Clip>
+                                        <TextBlock x:Name="txtDefaultAvatar" Text="🎮" FontSize="40" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <Image x:Name="imgProfileAvatar" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                                    </Grid>
                                 </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="20,0,0,0">
+                                    <TextBlock x:Name="txtProfileDisplayUsername" Text="[Username]" Foreground="White" FontSize="28" FontWeight="Black"/>
+                                    <TextBlock x:Name="lblMemberOf" Text="Thành viên OtonashiRei Server" Foreground="#4ADE80" FontSize="14" Margin="0,5,0,0"/>
+                                </StackPanel>
+                            </Grid>
 
-                                <Border Grid.Column="1"
-                                        Background="#990F0812"
-                                        BorderBrush="#22F36895"
-                                        BorderThickness="1"
-                                        CornerRadius="6"
-                                        Padding="40"
-                                        Margin="0,0,0,20">
-                                        <Grid>
-                                                <StackPanel x:Name="pnlProfileInfo"
-                                                            Visibility="Visible">
-                                                        <TextBlock Text="THÔNG TIN TÀI KHOẢN"
-                                                                   Foreground="#F36895"
-                                                                   FontSize="22"
-                                                                   FontWeight="Black"
-                                                                   Margin="0,0,0,30"/>
+                            <Border Background="#4C000000" BorderBrush="#33F36895" BorderThickness="1" CornerRadius="6" Padding="20" Width="380" HorizontalAlignment="Left">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="15"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                                                        <Grid Margin="0,0,0,30">
-                                                                <Grid.ColumnDefinitions>
-                                                                        <ColumnDefinition Width="Auto"/>
-                                                                        <ColumnDefinition Width="*"/>
-                                                                </Grid.ColumnDefinitions>
-                                                                <Border Width="80"
-                                                                        Height="80"
-                                                                        CornerRadius="40"
-                                                                        Background="#33F36895"
-                                                                        BorderBrush="#F36895"
-                                                                        BorderThickness="2">
-                                                                        <Grid>
-                                                                                <!-- THÊM MẶT NẠ CẮT TRÒN Ở ĐÂY -->
-                                                                                <!-- Khung 80, viền 2 => Không gian bên trong là 76. Tâm ở 38, bán kính 38 -->
-                                                                                <Grid.Clip>
-                                                                                        <EllipseGeometry RadiusX="38"
-                                                                                                        RadiusY="38"
-                                                                                                        Center="38,38"/>
-                                                                                </Grid.Clip>
+                                    <TextBlock x:Name="lblUsernameStr" Grid.Row="0" Grid.Column="0" Text="Tên đăng nhập:" Foreground="#BFA6C4" FontSize="14"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" x:Name="txtProfileUsernameValue" Text="[Username]" Foreground="White" FontSize="14" FontWeight="SemiBold"/>
 
-                                                                                <TextBlock x:Name="txtDefaultAvatar"
-                                                                                           Text="🎮"
-                                                                                           FontSize="40"
-                                                                                           HorizontalAlignment="Center"
-                                                                                           VerticalAlignment="Center"/>
-                                                                                <Image x:Name="imgProfileAvatar"
-                                                                                       Stretch="UniformToFill"
-                                                                                       RenderOptions.BitmapScalingMode="NearestNeighbor"/>
-                                                                        </Grid>
-                                                                </Border>
-                                                                <StackPanel Grid.Column="1"
-                                                                            VerticalAlignment="Center"
-                                                                            Margin="20,0,0,0">
-                                                                        <TextBlock x:Name="txtProfileDisplayUsername"
-                                                                                   Text="[Username]"
-                                                                                   Foreground="White"
-                                                                                   FontSize="28"
-                                                                                   FontWeight="Black"/>
-                                                                        <TextBlock Text="Thành viên OtonashiRei Server"
-                                                                                   Foreground="#4ADE80"
-                                                                                   FontSize="14"
-                                                                                   Margin="0,5,0,0"/>
-                                                                </StackPanel>
-                                                        </Grid>
-
-                                                        <Border Background="#4C000000"
-                                                                BorderBrush="#33F36895"
-                                                                BorderThickness="1"
-                                                                CornerRadius="6"
-                                                                Padding="20"
-                                                                Width="380"
-                                                                HorizontalAlignment="Left">
-                                                                <Grid>
-                                                                        <Grid.RowDefinitions>
-                                                                                <RowDefinition Height="Auto"/>
-                                                                                <RowDefinition Height="15"/>
-                                                                                <RowDefinition Height="Auto"/>
-                                                                        </Grid.RowDefinitions>
-                                                                        <Grid.ColumnDefinitions>
-                                                                                <ColumnDefinition Width="150"/>
-                                                                                <ColumnDefinition Width="*"/>
-                                                                        </Grid.ColumnDefinitions>
-
-                                                                        <TextBlock Grid.Row="0"
-                                                                                   Grid.Column="0"
-                                                                                   Text="Tên đăng nhập:"
-                                                                                   Foreground="#BFA6C4"
-                                                                                   FontSize="14"/>
-                                                                        <TextBlock Grid.Row="0"
-                                                                                   Grid.Column="1"
-                                                                                   x:Name="txtProfileUsernameValue"
-                                                                                   Text="[Username]"
-                                                                                   Foreground="White"
-                                                                                   FontSize="14"
-                                                                                   FontWeight="SemiBold"/>
-
-                                                                        <TextBlock Grid.Row="2"
-                                                                                   Grid.Column="0"
-                                                                                   Text="Trạng thái:"
-                                                                                   Foreground="#BFA6C4"
-                                                                                   FontSize="14"/>
-                                                                        <TextBlock Grid.Row="2"
-                                                                                   Grid.Column="1"
-                                                                                   Text="Đã sẵn sàng"
-                                                                                   Foreground="#4ADE80"
-                                                                                   FontSize="14"
-                                                                                   FontWeight="SemiBold"/>
-                                                                </Grid>
-                                                        </Border>
-                                                </StackPanel>
-
-                                                <StackPanel x:Name="pnlProfileSkin"
-                                                            Visibility="Collapsed"
-                                                            Width="380"
-                                                            HorizontalAlignment="Left">
-                                                        <TextBlock Text="THAY ĐỔI SKIN (DIỆN MẠO)"
-                                                                   Foreground="#F36895"
-                                                                   FontSize="22"
-                                                                   FontWeight="Black"
-                                                                   Margin="0,0,0,25"/>
-
-                                                        <TextBlock Text="Định dạng hỗ trợ: PNG (64x64 hoặc 64x32)"
-                                                                   Foreground="#BFA6C4"
-                                                                   FontSize="13"
-                                                                   Margin="0,0,0,15"/>
-
-                                                        <Border Width="120"
-                                                                Height="120"
-                                                                BorderBrush="#33F36895"
-                                                                BorderThickness="2"
-                                                                CornerRadius="8"
-                                                                Background="#4C000000"
-                                                                Margin="0,0,0,20"
-                                                                HorizontalAlignment="Left">
-                                                                <Grid>
-                                                                        <TextBlock Text="?"
-                                                                                   FontSize="40"
-                                                                                   Foreground="#33F36895"
-                                                                                   HorizontalAlignment="Center"
-                                                                                   VerticalAlignment="Center"/>
-                                                                        <Image x:Name="imgSkinPreview"
-                                                                               Stretch="Uniform"
-                                                                               RenderOptions.BitmapScalingMode="NearestNeighbor"/>
-                                                                </Grid>
-                                                        </Border>
-
-                                                        <Grid Margin="0,0,0,20">
-                                                                <Grid.ColumnDefinitions>
-                                                                        <ColumnDefinition Width="*"/>
-                                                                        <ColumnDefinition Width="15"/>
-                                                                        <ColumnDefinition Width="*"/>
-                                                                </Grid.ColumnDefinitions>
-                                                                <Button Grid.Column="0"
-                                                                        Content="CHỌN FILE..."
-                                                                        Style="{StaticResource ProfileSecondaryActionButton}"
-                                                                        Click="btnSelectSkin_Click"/>
-                                                                <Button Click="btnUploadSkin_Click"
-                                                                                Content="TẢI LÊN"
-                                                                                Grid.Column="2"
-                                                                                IsEnabled="False"
-                                                                                Style="{StaticResource ProfileSecondaryActionButton}"
-                                                                                x:Name="btnUploadSkin"/>
-                                                        </Grid>
-                                                        <TextBlock Text="Cần cài đặt mod CustomSkinLoader hoặc SkinRestorer để hiển thị trong game."
-                                                                   Foreground="#4ADE80"
-                                                                   FontSize="12"
-                                                                   TextWrapping="Wrap"/>
-                                                </StackPanel>
-
-                                                <StackPanel x:Name="pnlProfileEmail"
-                                                            Visibility="Collapsed"
-                                                            Width="380"
-                                                            HorizontalAlignment="Left">
-                                                        <TextBlock Text="LIÊN KẾT EMAIL MỚI"
-                                                                   Foreground="#F36895"
-                                                                   FontSize="22"
-                                                                   FontWeight="Black"
-                                                                   Margin="0,0,0,25"/>
-
-                                                        <StackPanel x:Name="pnlEmailInput"
-                                                                    Visibility="Visible">
-                                                                <TextBlock Text="Địa chỉ Email mới"
-                                                                           Foreground="#BFA6C4"
-                                                                           FontSize="13"
-                                                                           Margin="0,0,0,8"/>
-                                                                <TextBox x:Name="txtNewEmail"
-                                                                         Margin="0,0,0,20"/>
-                                                                <Button x:Name="btnSendEmailOtp"
-                                                                        Content="ĐỔI EMAIL"
-                                                                        Style="{StaticResource ProfileSecondaryActionButton}"
-                                                                        Click="btnSendEmailOtp_Click"
-                                                                        Margin="0,0,0,25"/>
-                                                        </StackPanel>
-
-                                                        <StackPanel x:Name="pnlOtpVerify"
-                                                                    Visibility="Collapsed">
-                                                                <TextBlock Text="Mã xác nhận OTP (6 số)"
-                                                                           Foreground="#BFA6C4"
-                                                                           FontSize="13"
-                                                                           Margin="0,0,0,8"/>
-                                                                <TextBox x:Name="txtEmailOtp"
-                                                                         Margin="0,0,0,20"/>
-                                                                <Grid>
-                                                                        <Grid.ColumnDefinitions>
-                                                                                <ColumnDefinition Width="*"/>
-                                                                                <ColumnDefinition Width="15"/>
-                                                                                <ColumnDefinition Width="*"/>
-                                                                        </Grid.ColumnDefinitions>
-                                                                        <Button Grid.Column="0"
-                                                                                Content="HỦY BỎ"
-                                                                                Style="{StaticResource ProfileCancelButton}"
-                                                                                Click="btnCancelEmailOtp_Click"/>
-                                                                        <Button Grid.Column="2"
-                                                                                Content="XÁC NHẬN MÃ"
-                                                                                Style="{StaticResource ProfileSecondaryActionButton}"
-                                                                                Click="btnConfirmEmailChange_Click"/>
-                                                                </Grid>
-                                                                <TextBlock Text="Đã gửi OTP đến Email gốc của tài khoản. Vui lòng kiểm tra hộp thư."
-                                                                           Foreground="#4ADE80"
-                                                                           FontSize="12"
-                                                                           Margin="0,15,0,0"
-                                                                           TextWrapping="Wrap"/>
-                                                        </StackPanel>
-                                                </StackPanel>
-
-                                                <StackPanel x:Name="pnlProfilePassword"
-                                                            Visibility="Collapsed"
-                                                            Width="380"
-                                                            HorizontalAlignment="Left">
-                                                        <TextBlock Text="ĐỔI MẬT KHẨU"
-                                                                   Foreground="#F36895"
-                                                                   FontSize="22"
-                                                                   FontWeight="Black"
-                                                                   Margin="0,0,0,25"/>
-
-                                                        <StackPanel x:Name="pnlPasswordInput"
-                                                                    Visibility="Visible">
-                                                                <TextBlock Text="Mật khẩu hiện tại"
-                                                                           Foreground="#BFA6C4"
-                                                                           FontSize="13"
-                                                                           Margin="0,0,0,8"/>
-                                                                <PasswordBox x:Name="txtOldPassword"
-                                                                             Margin="0,0,0,20"/>
-
-                                                                <TextBlock Text="Mật khẩu mới"
-                                                                           Foreground="#BFA6C4"
-                                                                           FontSize="13"
-                                                                           Margin="0,0,0,8"/>
-                                                                <PasswordBox x:Name="txtNewPassword"
-                                                                             Margin="0,0,0,20"/>
-
-                                                                <TextBlock Text="Xác nhận mật khẩu mới"
-                                                                           Foreground="#BFA6C4"
-                                                                           FontSize="13"
-                                                                           Margin="0,0,0,8"/>
-                                                                <PasswordBox x:Name="txtConfirmNewPassword"
-                                                                             Margin="0,0,0,25"/>
-
-                                                                <Button x:Name="btnSendPasswordOtp"
-                                                                        Content="ĐỔI MẬT KHẨU"
-                                                                        Style="{StaticResource ProfileSecondaryActionButton}"
-                                                                        Click="btnSendPasswordOtp_Click"
-                                                                        Margin="0,0,0,25"/>
-                                                        </StackPanel>
-
-                                                        <StackPanel x:Name="pnlPasswordOtpVerify"
-                                                                    Visibility="Collapsed">
-                                                                <TextBlock Text="Mã xác nhận OTP (6 số)"
-                                                                           Foreground="#BFA6C4"
-                                                                           FontSize="13"
-                                                                           Margin="0,0,0,8"/>
-                                                                <TextBox x:Name="txtPasswordOtp"
-                                                                         Margin="0,0,0,20"/>
-                                                                <Grid>
-                                                                        <Grid.ColumnDefinitions>
-                                                                                <ColumnDefinition Width="*"/>
-                                                                                <ColumnDefinition Width="15"/>
-                                                                                <ColumnDefinition Width="*"/>
-                                                                        </Grid.ColumnDefinitions>
-                                                                        <Button Grid.Column="0"
-                                                                                Content="HỦY BỎ"
-                                                                                Style="{StaticResource ProfileCancelButton}"
-                                                                                Click="btnCancelPasswordOtp_Click"/>
-                                                                        <Button Grid.Column="2"
-                                                                                Content="XÁC NHẬN ĐỔI"
-                                                                                Style="{StaticResource ProfileSecondaryActionButton}"
-                                                                                Click="btnConfirmPasswordChange_Click"/>
-                                                                </Grid>
-                                                                <TextBlock Text="Đã gửi OTP đến Email gốc của tài khoản. Vui lòng kiểm tra hộp thư."
-                                                                           Foreground="#4ADE80"
-                                                                           FontSize="12"
-                                                                           Margin="0,15,0,0"
-                                                                           TextWrapping="Wrap"/>
-                                                        </StackPanel>
-                                                </StackPanel>
-                                        </Grid>
-                                </Border>
-                        </Grid>
-
-                        <Border Grid.Row="2"
-                                Grid.ColumnSpan="2"
-                                Background="#CC0F0812"
-                                BorderBrush="#33F36895"
-                                BorderThickness="0,1,0,0">
-                                <Grid Margin="20,15">
-                                        <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <Grid x:Name="DownloadProgressContainer"
-                                              Grid.Column="0"
-                                              VerticalAlignment="Center"
-                                              Margin="10,0,40,0"
-                                              Visibility="Collapsed">
-                                                <StackPanel>
-                                                        <Grid Margin="0,0,0,8">
-                                                                <TextBlock x:Name="txtDownloadStatus"
-                                                                           Text="Đang kiểm tra..."
-                                                                           Foreground="#BFA6C4"
-                                                                           FontSize="13"/>
-                                                                <TextBlock x:Name="txtDownloadDetail"
-                                                                           Text="0 / 0"
-                                                                           Foreground="#94A3B8"
-                                                                           FontSize="12"
-                                                                           HorizontalAlignment="Right"/>
-                                                        </Grid>
-                                                        <ProgressBar x:Name="pbDownload"
-                                                                     Style="{StaticResource SakuraProgressBar}"
-                                                                     Height="10"
-                                                                     Maximum="100"
-                                                                     Value="0"/>
-                                                        <TextBlock x:Name="txtDownloadPercentage"
-                                                                   Text="0%"
-                                                                   Foreground="#F36895"
-                                                                   FontSize="12"
-                                                                   FontWeight="Bold"
-                                                                   HorizontalAlignment="Right"
-                                                                   Margin="0,5,0,0"/>
-                                                </StackPanel>
-                                        </Grid>
-
-                                        <StackPanel Grid.Column="1"
-                                                    HorizontalAlignment="Right"
-                                                    VerticalAlignment="Center"
-                                                    Orientation="Horizontal">
-                                                <StackPanel VerticalAlignment="Center"
-                                                            Margin="0,0,20,0"
-                                                            HorizontalAlignment="Right">
-                                                        <StackPanel Orientation="Horizontal"
-                                                                    HorizontalAlignment="Right"
-                                                                    Margin="0,0,0,8">
-                                                                <TextBlock Text="Lưu tại: "
-                                                                           Foreground="#94A3B8"
-                                                                           FontSize="11"
-                                                                           VerticalAlignment="Center"/>
-                                                                <TextBlock x:Name="txtInstallPath"
-                                                                           Text="C:\...\Minecraft"
-                                                                           Foreground="#E2D4E6"
-                                                                           FontSize="11"
-                                                                           MaxWidth="150"
-                                                                           TextTrimming="CharacterEllipsis"
-                                                                           VerticalAlignment="Center"
-                                                                           ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
-                                                                <Button Content="Thay đổi"
-                                                                        Foreground="#F36895"
-                                                                        Background="Transparent"
-                                                                        BorderThickness="0"
-                                                                        FontSize="11"
-                                                                        FontWeight="Bold"
-                                                                        Margin="8,0,0,0"
-                                                                        Cursor="Hand"
-                                                                        Click="ChangePath_Click"/>
-                                                        </StackPanel>
-                                                        <StackPanel Orientation="Horizontal"
-                                                                    HorizontalAlignment="Right">
-                                                                <TextBlock x:Name="txtVersionLabel"
-                                                                           Text="Phiên bản chuẩn bị tải: "
-                                                                           Foreground="#94A3B8"
-                                                                           FontSize="12"
-                                                                           VerticalAlignment="Center"/>
-                                                                <TextBlock x:Name="txtGameVersion"
-                                                                           Text="Đang tải..."
-                                                                           Foreground="White"
-                                                                           FontSize="14"
-                                                                           FontWeight="Bold"
-                                                                           VerticalAlignment="Center"/>
-                                                        </StackPanel>
-                                                </StackPanel>
-                                                <Button x:Name="btnPlay"
-                                                        Content="KHỞI ĐỘNG"
-                                                        Style="{StaticResource PlayButton}"
-                                                        Width="250"
-                                                        Height="80"
-                                                        Click="PlayButton_Click"/>
-                                        </StackPanel>
+                                    <TextBlock x:Name="lblStatusStr" Grid.Row="2" Grid.Column="0" Text="Trạng thái:" Foreground="#BFA6C4" FontSize="14"/>
+                                    <TextBlock x:Name="lblStatusReady" Grid.Row="2" Grid.Column="1" Text="Đã sẵn sàng" Foreground="#4ADE80" FontSize="14" FontWeight="SemiBold"/>
                                 </Grid>
-                        </Border>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel x:Name="pnlProfileSkin" Visibility="Collapsed" Width="380" HorizontalAlignment="Left">
+                            <TextBlock x:Name="lblChangeSkinTitle" Text="THAY ĐỔI SKIN (DIỆN MẠO)" Foreground="#F36895" FontSize="22" FontWeight="Black" Margin="0,0,0,25"/>
+                            <TextBlock x:Name="lblSkinFormat" Text="Định dạng hỗ trợ: PNG (64x64 hoặc 64x32)" Foreground="#BFA6C4" FontSize="13" Margin="0,0,0,15"/>
+
+                            <Border Width="120" Height="120" BorderBrush="#33F36895" BorderThickness="2" CornerRadius="8" Background="#4C000000" Margin="0,0,0,20" HorizontalAlignment="Left">
+                                <Grid>
+                                    <TextBlock Text="?" FontSize="40" Foreground="#33F36895" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <Image x:Name="imgSkinPreview" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                                </Grid>
+                            </Border>
+
+                            <Grid Margin="0,0,0,20">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="15"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button x:Name="btnSelectSkin" Grid.Column="0" Content="CHỌN FILE..." Style="{StaticResource ProfileSecondaryActionButton}" Click="btnSelectSkin_Click"/>
+                                <Button x:Name="btnUploadSkin" Grid.Column="2" Content="TẢI LÊN" IsEnabled="False" Style="{StaticResource ProfileSecondaryActionButton}" Click="btnUploadSkin_Click"/>
+                            </Grid>
+                            <TextBlock x:Name="lblSkinNote" Text="Cần cài đặt mod CustomSkinLoader hoặc SkinRestorer để hiển thị trong game." Foreground="#4ADE80" FontSize="12" TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <StackPanel x:Name="pnlProfileEmail" Visibility="Collapsed" Width="380" HorizontalAlignment="Left">
+                            <TextBlock x:Name="lblLinkEmailTitle" Text="LIÊN KẾT EMAIL MỚI" Foreground="#F36895" FontSize="22" FontWeight="Black" Margin="0,0,0,25"/>
+
+                            <StackPanel x:Name="pnlEmailInput" Visibility="Visible">
+                                <TextBlock x:Name="lblNewEmailStr" Text="Địa chỉ Email mới" Foreground="#BFA6C4" FontSize="13" Margin="0,0,0,8"/>
+                                <TextBox x:Name="txtNewEmail" Margin="0,0,0,20"/>
+                                <Button x:Name="btnSendEmailOtp" Content="ĐỔI EMAIL" Style="{StaticResource ProfileSecondaryActionButton}" Click="btnSendEmailOtp_Click" Margin="0,0,0,25"/>
+                            </StackPanel>
+
+                            <StackPanel x:Name="pnlOtpVerify" Visibility="Collapsed">
+                                <TextBlock x:Name="lblEmailOtpStr" Text="Mã xác nhận OTP (6 số)" Foreground="#BFA6C4" FontSize="13" Margin="0,0,0,8"/>
+                                <TextBox x:Name="txtEmailOtp" Margin="0,0,0,20"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="15"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="btnCancelEmailOtp" Grid.Column="0" Content="HỦY BỎ" Style="{StaticResource ProfileCancelButton}" Click="btnCancelEmailOtp_Click"/>
+                                    <Button x:Name="btnConfirmEmailChange" Grid.Column="2" Content="XÁC NHẬN MÃ" Style="{StaticResource ProfileSecondaryActionButton}" Click="btnConfirmEmailChange_Click"/>
+                                </Grid>
+                                <TextBlock x:Name="lblEmailOtpNote" Text="Đã gửi OTP đến Email gốc của tài khoản. Vui lòng kiểm tra hộp thư." Foreground="#4ADE80" FontSize="12" Margin="0,15,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <StackPanel x:Name="pnlProfilePassword" Visibility="Collapsed" Width="380" HorizontalAlignment="Left">
+                            <TextBlock x:Name="lblChangePassTitle" Text="ĐỔI MẬT KHẨU" Foreground="#F36895" FontSize="22" FontWeight="Black" Margin="0,0,0,25"/>
+
+                            <StackPanel x:Name="pnlPasswordInput" Visibility="Visible">
+                                <TextBlock x:Name="lblOldPassStr" Text="Mật khẩu hiện tại" Foreground="#BFA6C4" FontSize="13" Margin="0,0,0,8"/>
+                                <PasswordBox x:Name="txtOldPassword" Margin="0,0,0,20"/>
+
+                                <TextBlock x:Name="lblNewPassStr" Text="Mật khẩu mới" Foreground="#BFA6C4" FontSize="13" Margin="0,0,0,8"/>
+                                <PasswordBox x:Name="txtNewPassword" Margin="0,0,0,20"/>
+
+                                <TextBlock x:Name="lblConfirmPassStr" Text="Xác nhận mật khẩu mới" Foreground="#BFA6C4" FontSize="13" Margin="0,0,0,8"/>
+                                <PasswordBox x:Name="txtConfirmNewPassword" Margin="0,0,0,25"/>
+
+                                <Button x:Name="btnSendPasswordOtp" Content="ĐỔI MẬT KHẨU" Style="{StaticResource ProfileSecondaryActionButton}" Click="btnSendPasswordOtp_Click" Margin="0,0,0,25"/>
+                            </StackPanel>
+
+                            <StackPanel x:Name="pnlPasswordOtpVerify" Visibility="Collapsed">
+                                <TextBlock x:Name="lblPassOtpStr" Text="Mã xác nhận OTP (6 số)" Foreground="#BFA6C4" FontSize="13" Margin="0,0,0,8"/>
+                                <TextBox x:Name="txtPasswordOtp" Margin="0,0,0,20"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="15"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="btnCancelPasswordOtp" Grid.Column="0" Content="HỦY BỎ" Style="{StaticResource ProfileCancelButton}" Click="btnCancelPasswordOtp_Click"/>
+                                    <Button x:Name="btnConfirmPasswordChange" Grid.Column="2" Content="XÁC NHẬN ĐỔI" Style="{StaticResource ProfileSecondaryActionButton}" Click="btnConfirmPasswordChange_Click"/>
+                                </Grid>
+                                <TextBlock x:Name="lblPassOtpNote" Text="Đã gửi OTP đến Email gốc của tài khoản. Vui lòng kiểm tra hộp thư." Foreground="#4ADE80" FontSize="12" Margin="0,15,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- GIAO DIỆN TRANG CÀI ĐẶT MỚI THÊM -->
+            <Grid x:Name="ViewSettings" Grid.Row="1" Grid.ColumnSpan="2" Visibility="Collapsed" Margin="30,30,80,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="230"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Background="#990F0812" BorderBrush="#22F36895" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,20,20">
+                    <StackPanel>
+                        <TextBlock x:Name="lblSettingsSidebarTitle" Text="DANH MỤC CÀI ĐẶT" Foreground="#BFA6C4" FontSize="12" FontWeight="Bold" Margin="10,10,0,15"/>
+                        <RadioButton x:Name="radSubSetGeneral" Content="Cài đặt chung" Style="{StaticResource ProfileSubTabButton}" IsChecked="True" Checked="SubSetGeneral_Checked"/>
+                        <RadioButton x:Name="radSubSetGraphics" Content="Đồ họa" Style="{StaticResource ProfileSubTabButton}" Checked="SubSetGraphics_Checked"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1" Background="#990F0812" BorderBrush="#22F36895" BorderThickness="1" CornerRadius="6" Padding="40" Margin="0,0,0,20">
+                    <Grid>
+                        <StackPanel x:Name="pnlSettingsGeneral" Visibility="Visible">
+                            <TextBlock x:Name="lblSettingsGeneralTitle" Text="CÀI ĐẶT CHUNG" Foreground="#F36895" FontSize="22" FontWeight="Black" Margin="0,0,0,30"/>
+                            
+                            <TextBlock x:Name="lblLanguageStr" Text="Ngôn ngữ giao diện" Foreground="#BFA6C4" FontSize="14" Margin="0,0,0,8"/>
+                            <Button x:Name="btnChangeLanguage" Content="Chuyển sang Tiếng Anh (English)" Style="{StaticResource ProfileSecondaryActionButton}" HorizontalAlignment="Left" Width="300" Click="btnLanguage_Click" Margin="0,0,0,30"/>
+
+                            <TextBlock x:Name="lblLogoutStr" Text="Quản lý tài khoản" Foreground="#BFA6C4" FontSize="14" Margin="0,0,0,8"/>
+                            <Button x:Name="btnLogoutApp" Content="ĐĂNG XUẤT THOÁT KHỎI TÀI KHOẢN" Style="{StaticResource ProfileCancelButton}" HorizontalAlignment="Left" Width="300" Click="LogoutButton_Click"/>
+                        </StackPanel>
+
+                        <StackPanel x:Name="pnlSettingsGraphics" Visibility="Collapsed">
+                            <TextBlock x:Name="lblSettingsGraphicsTitle" Text="CÀI ĐẶT ĐỒ HỌA" Foreground="#F36895" FontSize="22" FontWeight="Black" Margin="0,0,0,30"/>
+
+                            <TextBlock x:Name="lblShaderStr" Text="Quản lý Shader (Gói đồ họa)" Foreground="#BFA6C4" FontSize="14" Margin="0,0,0,8"/>
+                            <Button x:Name="btnAddShader" Content="THÊM FILE SHADER (.ZIP)" Style="{StaticResource ProfileSecondaryActionButton}" HorizontalAlignment="Left" Width="300" Click="btnAddShader_Click" Margin="0,0,0,30"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <Border Grid.Row="2" Grid.ColumnSpan="2" Background="#CC0F0812" BorderBrush="#33F36895" BorderThickness="0,1,0,0">
+                <Grid Margin="20,15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Grid x:Name="DownloadProgressContainer" Grid.Column="0" VerticalAlignment="Center" Margin="10,0,40,0" Visibility="Collapsed">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,8">
+                                <TextBlock x:Name="txtDownloadStatus" Text="Đang kiểm tra..." Foreground="#BFA6C4" FontSize="13"/>
+                                <TextBlock x:Name="txtDownloadDetail" Text="0 / 0" Foreground="#94A3B8" FontSize="12" HorizontalAlignment="Right"/>
+                            </Grid>
+                            <ProgressBar x:Name="pbDownload" Style="{StaticResource SakuraProgressBar}" Height="10" Maximum="100" Value="0"/>
+                            <TextBlock x:Name="txtDownloadPercentage" Text="0%" Foreground="#F36895" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,5,0,0"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal">
+                        <StackPanel VerticalAlignment="Center" Margin="0,0,20,0" HorizontalAlignment="Right">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,8">
+                                <TextBlock x:Name="lblSaveAt" Text="Lưu tại: " Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="txtInstallPath" Text="C:\...\Minecraft" Foreground="#E2D4E6" FontSize="11" MaxWidth="150" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+                                <Button x:Name="btnChangePath" Content="Thay đổi" Foreground="#F36895" Background="Transparent" BorderThickness="0" FontSize="11" FontWeight="Bold" Margin="8,0,0,0" Cursor="Hand" Click="ChangePath_Click"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <TextBlock x:Name="txtVersionLabel" Text="Phiên bản chuẩn bị tải: " Foreground="#94A3B8" FontSize="12" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="txtGameVersion" Text="Đang tải..." Foreground="White" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+                        <Button x:Name="btnPlay" Content="KHỞI ĐỘNG" Style="{StaticResource PlayButton}" Width="250" Height="80" Click="PlayButton_Click"/>
+                    </StackPanel>
                 </Grid>
+            </Border>
         </Grid>
+    </Grid>
 </Window>
