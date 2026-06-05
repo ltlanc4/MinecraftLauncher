@@ -968,6 +968,7 @@ namespace MinecraftLauncher
         // ===============================================================
         // CÁC SỰ KIỆN ĐIỀU KHIỂN CỬA SỔ CHUNG
         // ===============================================================
+        
         // ================= HỆ THỐNG CẬP NHẬT CLIENT =================
         private async Task CheckForLauncherUpdate()
         {
@@ -979,36 +980,38 @@ namespace MinecraftLauncher
                     string json = await response.Content.ReadAsStringAsync();
                     var updateInfo = JsonSerializer.Deserialize<UpdateInfo>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                    // Nếu version trên server khác version ở client -> Hiện nút Update
                     if (updateInfo != null && !string.IsNullOrEmpty(updateInfo.Version) && updateInfo.Version != CURRENT_VERSION)
                     {
-                        Dispatcher.Invoke(() =>
-                        {
+                        Dispatcher.Invoke(() => {
                             if (this.FindName("btnUpdateClient") is Button btnUpdate)
                             {
                                 btnUpdate.Visibility = Visibility.Visible;
-                                btnUpdate.Tag = updateInfo.DownloadUrl; // Lưu link tải ngầm vào nút
+                                // LƯU Ý SỬA LỖI: Lưu toàn bộ đối tượng updateInfo vào Tag thay vì chỉ lưu mỗi link URL
+                                btnUpdate.Tag = updateInfo; 
                             }
                         });
                     }
                 }
             }
-            catch { } // Lỗi mạng thì bỏ qua, không làm phiền người dùng
+            catch { } 
         }
 
         private async void btnUpdateClient_Click(object sender, RoutedEventArgs e)
         {
-            string downloadUrl = (sender as Button)?.Tag?.ToString() ?? "";
-            if (string.IsNullOrEmpty(downloadUrl)) return;
+            // Lấy lại đối tượng updateInfo từ nút bấm
+            var updateInfo = (sender as Button)?.Tag as UpdateInfo;
+            if (updateInfo == null || string.IsNullOrEmpty(updateInfo.DownloadUrl)) return;
 
             string title = GetLang("msg_UpdateAvailableTitle");
-            string desc = GetLang("msg_GenericUpdateDesc");
+            
+            // LƯU Ý SỬA LỖI: Dùng string.Format để thay thế chữ {0} bằng số phiên bản (updateInfo.Version)
+            string desc = string.Format(GetLang("msg_UpdateAvailableDesc"), updateInfo.Version);
 
             // Hỏi người dùng có muốn update không
             bool doUpdate = NotificationManager.ShowConfirm(title, desc);
             if (doUpdate)
             {
-                await DownloadAndApplyUpdate(downloadUrl);
+                await DownloadAndApplyUpdate(updateInfo.DownloadUrl);
             }
         }
 
