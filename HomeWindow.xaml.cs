@@ -24,7 +24,7 @@ namespace MinecraftLauncher
 {
     public partial class HomeWindow : Window
     {
-        private readonly string CURRENT_VERSION = "1.0.1";
+        private readonly string CURRENT_VERSION = "1.0.0";
         private string _username;
         private static readonly HttpClient _httpClient = new HttpClient();
 
