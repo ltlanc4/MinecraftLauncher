@@ -18,16 +18,17 @@ using CmlLib.Core;
 using CmlLib.Core.Auth;
 using Microsoft.Win32;
 using System.Windows.Media.Imaging;
+using DotNetEnv;
 
 namespace MinecraftLauncher
 {
     public partial class HomeWindow : Window
     {
-        private readonly string CURRENT_VERSION = "1.0.0";
+        private readonly string CURRENT_VERSION = "1.0.1";
         private string _username;
         private static readonly HttpClient _httpClient = new HttpClient();
 
-        private readonly string API_SERVER_URL = "http://180.93.43.73:3000";
+        private string API_SERVER_URL;
         private readonly string SESSION_FILE = "session_data.json";
         private readonly string PATH_CONFIG_FILE = "launcher_path.txt";
         private readonly string LANG_CONFIG_FILE = "lang.txt";
@@ -47,6 +48,23 @@ namespace MinecraftLauncher
         public HomeWindow(string username, string token, string uuid)
         {
             InitializeComponent();
+            // Lấy đường dẫn tuyệt đối đến thư mục chứa file .exe của Launcher
+            string envPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".env");
+
+            if (File.Exists(envPath))
+            {
+                // Ép thư viện đọc chính xác file .env tại đường dẫn này
+                Env.Load(envPath);
+            }
+            else
+            {
+                // Thông báo trực tiếp nếu file chưa được copy vào thư mục build
+                MessageBox.Show("Lỗi: Không tìm thấy file .env tại đường dẫn: " + envPath, "THIẾU CẤU HÌNH");
+            }
+            string serverIP = Env.GetString("SERVER_API_IP");
+            string serverPort = Env.GetString("SERVER_API_PORT");
+
+            API_SERVER_URL = $"http://{serverIP}:{serverPort}";
             Application.Current.MainWindow = this;
 
             _username = username;
@@ -968,7 +986,7 @@ namespace MinecraftLauncher
         // ===============================================================
         // CÁC SỰ KIỆN ĐIỀU KHIỂN CỬA SỔ CHUNG
         // ===============================================================
-        
+
         // ================= HỆ THỐNG CẬP NHẬT CLIENT =================
         private async Task CheckForLauncherUpdate()
         {
@@ -982,18 +1000,19 @@ namespace MinecraftLauncher
 
                     if (updateInfo != null && !string.IsNullOrEmpty(updateInfo.Version) && updateInfo.Version != CURRENT_VERSION)
                     {
-                        Dispatcher.Invoke(() => {
+                        Dispatcher.Invoke(() =>
+                        {
                             if (this.FindName("btnUpdateClient") is Button btnUpdate)
                             {
                                 btnUpdate.Visibility = Visibility.Visible;
                                 // LƯU Ý SỬA LỖI: Lưu toàn bộ đối tượng updateInfo vào Tag thay vì chỉ lưu mỗi link URL
-                                btnUpdate.Tag = updateInfo; 
+                                btnUpdate.Tag = updateInfo;
                             }
                         });
                     }
                 }
             }
-            catch { } 
+            catch { }
         }
 
         private async void btnUpdateClient_Click(object sender, RoutedEventArgs e)
@@ -1003,7 +1022,7 @@ namespace MinecraftLauncher
             if (updateInfo == null || string.IsNullOrEmpty(updateInfo.DownloadUrl)) return;
 
             string title = GetLang("msg_UpdateAvailableTitle");
-            
+
             // LƯU Ý SỬA LỖI: Dùng string.Format để thay thế chữ {0} bằng số phiên bản (updateInfo.Version)
             string desc = string.Format(GetLang("msg_UpdateAvailableDesc"), updateInfo.Version);
 
@@ -1085,7 +1104,7 @@ del ""%~f0""
                 });
             }
         }
-        
+
         private void TopBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) { this.DragMove(); }
         private void MinimizeButton_Click(object sender, RoutedEventArgs e) { this.WindowState = WindowState.Minimized; }
 

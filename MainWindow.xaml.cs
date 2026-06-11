@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
+using DotNetEnv;
 
 namespace MinecraftLauncher
 {
@@ -18,9 +19,9 @@ namespace MinecraftLauncher
     {
         private FrameworkElement _currentPanel;
         private static readonly HttpClient _httpClient = new HttpClient();
-        
+
         // ĐỊA CHỈ BACKEND API
-        private readonly string API_BASE_URL = "http://180.93.43.73:3000/auth";
+        private string API_BASE_URL;
 
         // TÊN TỆP LƯU TRỮ PHIÊN ĐĂNG NHẬP
         private readonly string SESSION_FILE = "session_data.json";
@@ -33,9 +34,27 @@ namespace MinecraftLauncher
         public MainWindow()
         {
             InitializeComponent();
+            // Lấy đường dẫn tuyệt đối đến thư mục chứa file .exe của Launcher
+            string envPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".env");
+
+            if (File.Exists(envPath))
+            {
+                // Ép thư viện đọc chính xác file .env tại đường dẫn này
+                Env.Load(envPath);
+            }
+            else
+            {
+                // Thông báo trực tiếp nếu file chưa được copy vào thư mục build
+                MessageBox.Show("Lỗi: Không tìm thấy file .env tại đường dẫn: " + envPath, "THIẾU CẤU HÌNH");
+            }
+            string serverIP = Env.GetString("SERVER_API_IP");
+            string serverPort = Env.GetString("SERVER_API_PORT");
+
+            API_BASE_URL = $"http://{serverIP}:{serverPort}/auth";
+
             this.MouseLeftButtonDown += (s, e) => this.DragMove();
             _currentPanel = LoginPanel;
-            
+
             // Lắng nghe sự kiện để tự động điền tài khoản khi mở Launcher
             this.Loaded += MainWindow_Loaded;
 
@@ -55,8 +74,8 @@ namespace MinecraftLauncher
         // ================= HỆ THỐNG ĐA NGÔN NGỮ =================
         private void btnLanguage_Click(object sender, RoutedEventArgs e)
         {
-            string message = _isEnglish 
-                ? "The launcher needs to be restarted to apply the new language. Do you want to restart now?" 
+            string message = _isEnglish
+                ? "The launcher needs to be restarted to apply the new language. Do you want to restart now?"
                 : "Launcher cần khởi động lại để áp dụng ngôn ngữ mới. Bạn có muốn khởi động lại ngay bây giờ không?";
             string title = _isEnglish ? "RESTART REQUIRED" : "YÊU CẦU KHỞI ĐỘNG LẠI";
 
@@ -65,12 +84,12 @@ namespace MinecraftLauncher
 
             if (isConfirm)
             {
-                _isEnglish = !_isEnglish; 
-                File.WriteAllText(LANG_CONFIG_FILE, _isEnglish ? "EN" : "VI"); 
-                
+                _isEnglish = !_isEnglish;
+                File.WriteAllText(LANG_CONFIG_FILE, _isEnglish ? "EN" : "VI");
+
                 string currentExecutablePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
                 System.Diagnostics.Process.Start(currentExecutablePath);
-                
+
                 Application.Current.Shutdown();
             }
         }
@@ -78,14 +97,14 @@ namespace MinecraftLauncher
         private void ApplyLanguage()
         {
             string langFile = _isEnglish ? "lang/en.pak" : "lang/vi.pak";
-            try 
+            try
             {
                 if (File.Exists(langFile))
                 {
                     string json = File.ReadAllText(langFile);
                     _langDict = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
                 }
-            } 
+            }
             catch { }
 
             // Tự động map dữ liệu từ JSON vào toàn bộ Giao diện WPF
@@ -101,11 +120,11 @@ namespace MinecraftLauncher
             }
 
             // Đổi chữ hiển thị trên chính nút ngôn ngữ
-            if (this.FindName("btnLanguage") is Button btnLang) 
+            if (this.FindName("btnLanguage") is Button btnLang)
             {
                 btnLang.Content = _isEnglish ? "EN-US" : "VI-VN";
             }
-            
+
             // Xử lý giữ nguyên chữ cho các nút nếu chúng đang hiển thị
             var bLogin = this.FindName("btnLogin") as Button;
             if (bLogin != null && bLogin.IsEnabled) bLogin.Content = GetLang("btnLogin");
@@ -125,7 +144,7 @@ namespace MinecraftLauncher
         private string GetLang(string key)
         {
             if (_langDict != null && _langDict.ContainsKey(key)) return _langDict[key];
-            return key; 
+            return key;
         }
 
         // ================= TỰ ĐỘNG ĐIỀN VÀ ĐĂNG NHẬP NẾU CÓ LƯU =================
@@ -141,10 +160,10 @@ namespace MinecraftLauncher
                     if (session != null && !string.IsNullOrEmpty(session.Username) && !string.IsNullOrEmpty(session.Password))
                     {
                         txtLoginUsername.Text = session.Username;
-                        
+
                         string decodedPass = Encoding.UTF8.GetString(Convert.FromBase64String(session.Password));
                         txtLoginPassword.Password = decodedPass;
-                        
+
                         chkRememberMe.IsChecked = true;
 
                         LoginButton_Click(btnLogin, null);
@@ -237,7 +256,7 @@ namespace MinecraftLauncher
 
                 var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200));
                 var slideIn = new ThicknessAnimation(inStartMargin, new Thickness(0), TimeSpan.FromMilliseconds(200));
-                
+
                 fadeIn.Completed += (s2, e2) => this.IsHitTestVisible = true;
 
                 toPanel.BeginAnimation(UIElement.OpacityProperty, fadeIn);
@@ -272,12 +291,12 @@ namespace MinecraftLauncher
         {
             AnimateTransition(_currentPanel, LoginPanel, true);
             _currentPanel = LoginPanel;
-            
+
             txtRegUsername.Text = "";
             txtRegEmail.Text = "";
             txtRegPassword.Password = "";
             txtRegConfirm.Password = "";
-            
+
             txtRecoveryUsername.Text = "";
             txtRecoveryEmail.Text = "";
             txtRecoveryCode.Text = "";
@@ -303,7 +322,7 @@ namespace MinecraftLauncher
         {
             string username = txtLoginUsername.Text;
             string password = txtLoginPassword.Password;
-            
+
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
                 NotificationManager.Show(_isEnglish ? "WARNING" : "CẢNH BÁO", _isEnglish ? "Please enter username and password!" : "Vui lòng nhập tài khoản và mật khẩu!");
@@ -313,7 +332,7 @@ namespace MinecraftLauncher
             try
             {
                 ShowLoading(true);
-                await Task.Delay(1500); 
+                await Task.Delay(1500);
 
                 var payload = new { username = username, password = password };
                 string json = JsonSerializer.Serialize(payload);
@@ -321,7 +340,7 @@ namespace MinecraftLauncher
 
                 HttpResponseMessage response = await _httpClient.PostAsync($"{API_BASE_URL}/login", content);
                 string responseString = await response.Content.ReadAsStringAsync();
-                
+
                 EnsureJsonResponse(responseString);
 
                 var result = JsonSerializer.Deserialize<ApiResponse>(responseString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -348,7 +367,7 @@ namespace MinecraftLauncher
                     fadeOutWindow.Completed += (s3, e3) =>
                     {
                         HomeWindow home = new HomeWindow(result.Username, result.Token, result.Uuid);
-                        home.Opacity = 0; 
+                        home.Opacity = 0;
                         home.Show();
 
                         var fadeInHome = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(400));
@@ -413,7 +432,7 @@ namespace MinecraftLauncher
                 if (response.IsSuccessStatusCode && result != null && result.Success)
                 {
                     NotificationManager.Show(_isEnglish ? "SUCCESS" : "THÀNH CÔNG", _isEnglish ? $"Account {username} created successfully!" : $"Tạo tài khoản {username} thành công!");
-                    ReturnToLogin(); 
+                    ReturnToLogin();
                 }
                 else
                 {
@@ -436,7 +455,7 @@ namespace MinecraftLauncher
         {
             string username = txtRecoveryUsername.Text;
             string email = txtRecoveryEmail.Text;
-            
+
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(email))
             {
                 NotificationManager.Show(_isEnglish ? "WARNING" : "CẢNH BÁO", _isEnglish ? "Please enter Username and Email!" : "Vui lòng nhập Tên tài khoản và Email!");
@@ -485,7 +504,7 @@ namespace MinecraftLauncher
 
         private async void ConfirmResetPassword_Click(object sender, RoutedEventArgs e)
         {
-            string username = txtRecoveryUsername.Text; 
+            string username = txtRecoveryUsername.Text;
             string code = txtRecoveryCode.Text;
             string newPass = txtRecoveryNewPass.Password;
             string confirmPass = txtRecoveryConfirmPass.Password;
@@ -555,6 +574,6 @@ namespace MinecraftLauncher
         public string? Message { get; set; }
         public string? Token { get; set; }
         public string? Username { get; set; }
-        public string? Uuid { get; set; } 
+        public string? Uuid { get; set; }
     }
 }

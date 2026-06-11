@@ -310,18 +310,86 @@
                         <RadioButton x:Name="radTabSettings" Content="CÀI ĐẶT" Style="{StaticResource TopTabButton}" Checked="TabSettings_Checked"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
-                        <Button x:Name="btnUpdateClient" Content="⬇ CẬP NHẬT" Margin="0,0,15,0" Padding="10,0" Height="26" Background="#334ADE80" Foreground="#4ADE80" BorderThickness="1" BorderBrush="#4ADE80" FontWeight="Bold" FontSize="11" Cursor="Hand" Click="btnUpdateClient_Click" Visibility="Collapsed" VerticalAlignment="Center">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
-                                    </Border>
-                                </ControlTemplate>
-                            </Button.Template>
+                        <Button x:Name="btnUpdateClient" Content="⬇ CẬP NHẬT" Margin="0,5,15,0" Padding="12,0" Height="28" Cursor="Hand" Click="btnUpdateClient_Click" Visibility="Collapsed" VerticalAlignment="Center">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Foreground" Value="#F36895"/>
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="FontSize" Value="11"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="border" Background="#1AF36895" BorderBrush="#4DF36895" BorderThickness="1" CornerRadius="4">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="border" Property="Background" Value="#F36895"/>
+                                                        <Setter TargetName="border" Property="BorderBrush" Value="#F36895"/>
+                                                        <Setter Property="Foreground" Value="White"/>
+                                                        <Setter TargetName="border" Property="Effect">
+                                                            <Setter.Value>
+                                                                <DropShadowEffect Color="#F36895" BlurRadius="12" ShadowDepth="0" Opacity="0.6"/>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.Style>
                         </Button>
 
-                        <Button Content="—" Width="40" Height="30" Background="Transparent" Foreground="#94A3B8" BorderThickness="0" Cursor="Hand" Click="MinimizeButton_Click"/>
-                        <Button Content="✕" Width="40" Height="30" Background="Transparent" Foreground="#94A3B8" BorderThickness="0" Cursor="Hand" Click="CloseButton_Click"/>
+                        <Button Content="—" Width="40" Height="30" Cursor="Hand" Click="MinimizeButton_Click">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Foreground" Value="#94A3B8"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,2"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#F36895"/>
+                                                        <Setter Property="Foreground" Value="White"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <Button Content="✕" Width="40" Height="30" Cursor="Hand" Click="CloseButton_Click">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Foreground" Value="#94A3B8"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,2"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#F36895"/>
+                                                        <Setter Property="Foreground" Value="White"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.Style>
+                        </Button>
                     </StackPanel>
                 </Grid>
             </Border>
