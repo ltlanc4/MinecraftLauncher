@@ -45,6 +45,10 @@ namespace MinecraftLauncher
         private bool _isEnglish = false;
         private Dictionary<string, string> _langDict = new Dictionary<string, string>();
 
+        // CÀI ĐẶT MỨC RAM CHO MINECRAFT
+        private readonly string RAM_CONFIG_FILE = "ram_config.txt";
+        private int _allocatedRam = 4096; // Mặc định là 4GB
+
         public HomeWindow(string username, string token, string uuid)
         {
             InitializeComponent();
@@ -76,11 +80,61 @@ namespace MinecraftLauncher
             ApplyLanguage();
 
             LoadMinecraftPath();
+            LoadRamConfig();
 
             _autoSyncTimer = new DispatcherTimer();
             _autoSyncTimer.Interval = TimeSpan.FromSeconds(3);
             _autoSyncTimer.Tick += async (s, ev) => await AutoCheckServerUpdates();
             _autoSyncTimer.Start();
+        }
+
+        // Đọc mức RAM đã lưu ở lần chơi trước
+        private void LoadRamConfig()
+        {
+            if (File.Exists(RAM_CONFIG_FILE))
+            {
+                // Nếu file đã có, đọc số RAM đã lưu ra
+                if (int.TryParse(File.ReadAllText(RAM_CONFIG_FILE).Trim(), out int savedRam))
+                {
+                    _allocatedRam = savedRam;
+                }
+            }
+            else
+            {
+                // NẾU LẦN ĐẦU MỞ LAUNCHER: Tự động tạo file và ghi mức RAM mặc định (4096) vào
+                try 
+                { 
+                    File.WriteAllText(RAM_CONFIG_FILE, _allocatedRam.ToString()); 
+                } 
+                catch { }
+            }
+
+            // Gán giá trị vào thanh trượt Slider
+            if (this.FindName("sliderRam") is Slider sld) 
+            {
+                sld.Value = _allocatedRam;
+            }
+
+            // Hiển thị ngay con số text lên màn hình để giao diện không bị sai
+            if (this.FindName("txtRamValue") is TextBlock txt)
+            {
+                txt.Text = $"{_allocatedRam} MB ({_allocatedRam / 1024.0:0.#} GB)";
+            }
+        }
+
+        // Sự kiện khi người chơi kéo thanh Slider
+        private void sliderRam_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            _allocatedRam = (int)e.NewValue;
+            
+            // Cập nhật số hiển thị (Ví dụ: 4096 MB (4 GB))
+            if (this.FindName("txtRamValue") is TextBlock txt)
+            {
+                txt.Text = $"{_allocatedRam} MB ({_allocatedRam / 1024.0:0.#} GB)";
+            }
+            
+            // Tự động lưu ra file
+            try { File.WriteAllText(RAM_CONFIG_FILE, _allocatedRam.ToString()); } catch { }
         }
 
         // ================= HỆ THỐNG ĐA NGÔN NGỮ =================
@@ -153,6 +207,10 @@ namespace MinecraftLauncher
             if (this.FindName("lblShaderStr") is TextBlock lblShader) lblShader.Text = GetLang("lblShaderStr");
             if (this.FindName("btnAddShader") is Button btnShader) btnShader.Content = GetLang("btn_AddShader");
             if (this.FindName("btnUpdateClient") is Button btnUpdClient) btnUpdClient.Content = GetLang("btn_UpdateClient");
+            if (this.FindName("menuOpenFolder") is MenuItem mnuOpen) mnuOpen.Header = GetLang("menu_OpenFolder");
+            if (this.FindName("menuVerify") is MenuItem mnuVerify) mnuVerify.Header = GetLang("menu_Verify");
+            if (this.FindName("menuUninstall") is MenuItem mnuUninst) mnuUninst.Header = GetLang("menu_Uninstall");
+            if (this.FindName("lblRamStr") is TextBlock lblRam) lblRam.Text = GetLang("lbl_RamStr");
 
             CheckInstallationStatus();
             UpdateTotalModsText();
@@ -478,7 +536,7 @@ namespace MinecraftLauncher
                 var launchOption = new MLaunchOption
                 {
                     Session = MSession.GetOfflineSession(_username),
-                    MaximumRamMb = 4096,
+                    MaximumRamMb = _allocatedRam, // <--- SỬA LẠI DÒNG NÀY (Truyền RAM linh hoạt)
                     ServerIp = string.IsNullOrEmpty(_serverManifest.Server_Ip) ? "127.0.0.1" : _serverManifest.Server_Ip,
                     ServerPort = _serverManifest.Server_Port > 0 ? _serverManifest.Server_Port : 25565
                 };
@@ -542,6 +600,155 @@ namespace MinecraftLauncher
                     btnPlay.IsEnabled = true;
                     CheckInstallationStatus();
                 });
+            }
+        }
+
+        // ================= XỬ LÝ MENU GAME (CẠNH NÚT PLAY) =================
+
+        // 1. Ép Menu sổ ra khi bấm chuột TRÁI (Mặc định ContextMenu chỉ ra khi bấm chuột phải)
+        private void btnGameMenu_Click(object sender, RoutedEventArgs e)
+        {
+            if (btnGameMenu.ContextMenu != null)
+            {
+                btnGameMenu.ContextMenu.PlacementTarget = btnGameMenu;
+                btnGameMenu.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Top; // Cho menu chĩa lên trên
+                btnGameMenu.ContextMenu.IsOpen = true;
+            }
+        }
+
+        // 2. Mở thư mục Game bằng Windows Explorer
+        private void menuOpenFolder_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(_minecraftDirectory)) LoadMinecraftPath(); // Nếu chưa nạp path thì nạp lại
+            
+            if (Directory.Exists(_minecraftDirectory))
+            {
+                Process.Start(new ProcessStartInfo()
+                {
+                    FileName = _minecraftDirectory,
+                    UseShellExecute = true,
+                    Verb = "open"
+                });
+            }
+            else
+            {
+                NotificationManager.Show(GetLang("msg_Error"), _isEnglish ? "Game folder does not exist yet!" : "Thư mục game chưa tồn tại! Hãy bấm Khởi Động lần đầu để tạo.");
+            }
+        }
+
+        // 3. Xác thực tệp (Quét mã Hash, phục hồi file game gốc và Mods)
+        private async void menuVerify_Click(object sender, RoutedEventArgs e)
+        {
+            if (_serverManifest == null)
+            {
+                NotificationManager.Show(GetLang("msg_Error"), GetLang("msg_LoadConfigError"));
+                return;
+            }
+
+            // 1. Khóa giao diện để tránh người chơi bấm nhiều lần
+            btnPlay.IsEnabled = false;
+            if (this.FindName("btnGameMenu") is Button btnMenu) btnMenu.IsEnabled = false;
+
+            var progressContainer = this.FindName("DownloadProgressContainer") as FrameworkElement;
+            if (progressContainer != null) progressContainer.Visibility = Visibility.Visible;
+            var pBar = this.FindName("pbDownload") as ProgressBar;
+            if (pBar != null) pBar.Value = 0;
+
+            try
+            {
+                if (string.IsNullOrEmpty(_minecraftDirectory)) LoadMinecraftPath();
+                var path = new MinecraftPath(_minecraftDirectory);
+                var launcher = new CMLauncher(path);
+
+                // 2. Gắn sự kiện để cập nhật thanh ProgressBar khi CmlLib quét và phục hồi file
+                launcher.FileChanged += (fileEvent) =>
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        if (this.FindName("txtDownloadStatus") is TextBlock txtStat) txtStat.Text = $"[Phục hồi] {fileEvent.FileName}";
+                        if (this.FindName("txtDownloadDetail") is TextBlock txtDet) txtDet.Text = $"{fileEvent.ProgressedFileCount} / {fileEvent.TotalFileCount}";
+                        if (pBar != null) { pBar.Maximum = fileEvent.TotalFileCount; pBar.Value = fileEvent.ProgressedFileCount; }
+                        
+                        double pct = fileEvent.TotalFileCount > 0 ? ((double)fileEvent.ProgressedFileCount / fileEvent.TotalFileCount) * 100 : 0;
+                        if (this.FindName("txtDownloadPercentage") is TextBlock txtPct) txtPct.Text = $"{pct:F0}%";
+                    });
+                };
+
+                string targetVersion = GetTargetVersionName();
+
+                // 3. Xử lý tải lại file cấu hình Fabric (Phòng trường hợp người chơi xóa nhầm file json của Loader)
+                if (targetVersion.StartsWith("fabric-loader"))
+                {
+                    string versionDir = Path.Combine(path.Versions, targetVersion);
+                    string jsonPath = Path.Combine(versionDir, targetVersion + ".json");
+                    if (!File.Exists(jsonPath))
+                    {
+                        Dispatcher.Invoke(() => { if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = GetLang("msg_FetchFabric"); });
+                        if (!Directory.Exists(versionDir)) Directory.CreateDirectory(versionDir);
+                        byte[] jsonBytes = await _httpClient.GetByteArrayAsync($"https://meta.fabricmc.net/v2/versions/loader/{_serverManifest.Version}/{_serverManifest.Loader_Version}/profile/json");
+                        await File.WriteAllBytesAsync(jsonPath, jsonBytes);
+                    }
+                }
+
+                Dispatcher.Invoke(() => { if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = "Đang quét mã Hash và phục hồi file game gốc..."; });
+                
+                // 4. Kích hoạt cỗ máy Verify của CmlLib (Tự động tải bù file thiếu/hỏng từ Fabric). Lấy cấu trúc chi tiết của phiên bản và kích hoạt cỗ máy Verify
+                var versionInfo = await launcher.GetVersionAsync(targetVersion);
+                await launcher.CheckAndDownloadAsync(versionInfo);
+
+                // 5. Quét và đồng bộ lại Mods từ Server của bạn
+                Dispatcher.Invoke(() => { if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = "Đang kiểm tra và đồng bộ Mods..."; });
+                await SyncModsAsync(Path.Combine(path.BasePath, "mods"));
+
+                // 6. Hoàn tất
+                Dispatcher.Invoke(() =>
+                {
+                    CheckInstallationStatus();
+                    NotificationManager.Show(_isEnglish ? "SUCCESS" : "THÀNH CÔNG", 
+                        _isEnglish ? "All core game files and mods have been verified and restored!" 
+                                   : "Toàn bộ file game gốc và Mods đã được kiểm tra và phục hồi nguyên vẹn!");
+                });
+            }
+            catch (Exception ex)
+            {
+                Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msg_Error"), ex.Message));
+            }
+            finally
+            {
+                // Mở khóa lại giao diện
+                Dispatcher.Invoke(() =>
+                {
+                    btnPlay.IsEnabled = true;
+                    if (this.FindName("btnGameMenu") is Button menu) menu.IsEnabled = true;
+                    if (progressContainer != null) progressContainer.Visibility = Visibility.Collapsed;
+                });
+            }
+        }
+
+        // 4. Gỡ cài đặt (Xóa trắng thư mục)
+        private void menuUninstall_Click(object sender, RoutedEventArgs e)
+        {
+            string title = _isEnglish ? "UNINSTALL" : "GỠ CÀI ĐẶT";
+            string desc = GetLang("msg_UninstallConfirm");
+
+            bool confirm = NotificationManager.ShowConfirm(title, desc);
+            if (confirm)
+            {
+                try
+                {
+                    if (string.IsNullOrEmpty(_minecraftDirectory)) LoadMinecraftPath();
+
+                    if (Directory.Exists(_minecraftDirectory))
+                    {
+                        Directory.Delete(_minecraftDirectory, true); // True = Xóa toàn bộ file và thư mục con bên trong
+                        NotificationManager.Show(_isEnglish ? "SUCCESS" : "THÀNH CÔNG", GetLang("msg_UninstallSuccess"));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Lỗi này thường do game đang mở mà cố tình gỡ cài đặt
+                    NotificationManager.Show(GetLang("msg_Error"), ex.Message);
+                }
             }
         }
 

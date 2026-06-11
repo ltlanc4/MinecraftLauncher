@@ -138,5 +138,12 @@
   "btn_UpdateClient": "⬇ UPDATE",
   "msg_UpdateAvailableTitle": "UPDATE AVAILABLE",
   "msg_UpdateAvailableDesc": "A new Launcher version ({0}) is available. Do you want to update now to experience new features?",
-  "msg_DownloadingUpdate": "D O W N L O A D I N G   U P D A T E . . ."
+  "msg_DownloadingUpdate": "D O W N L O A D I N G   U P D A T E . . .",
+  "menu_OpenFolder": "Open Game Folder",
+  "menu_Verify": "Verify Integrity",
+  "menu_Uninstall": "Uninstall Game",
+  "msg_VerifySuccess": "Status reset! Next time you click PLAY, the system will scan and re-download missing files.",
+  "msg_UninstallConfirm": "Are you sure you want to delete all game data? This will remove all Mods and Settings.",
+  "msg_UninstallSuccess": "Game uninstalled successfully!",
+  "lbl_RamStr": "RAM Allocation (JVM)"
 }

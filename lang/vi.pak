@@ -138,5 +138,12 @@
   "btn_UpdateClient": "⬇ CẬP NHẬT",
   "msg_UpdateAvailableTitle": "BẢN CẬP NHẬT MỚI",
   "msg_UpdateAvailableDesc": "Đã có phiên bản Launcher ({0}) mới. Bạn có muốn tải và cập nhật ngay bây giờ không?",
-  "msg_DownloadingUpdate": "Đ A N G   T Ả I   B Ả N   C Ậ P   N H Ậ T . . ."
+  "msg_DownloadingUpdate": "Đ A N G   T Ả I   B Ả N   C Ậ P   N H Ậ T . . .",
+  "menu_OpenFolder": "Mở thư mục Game",
+  "menu_Verify": "Xác thực tệp (Verify)",
+  "menu_Uninstall": "Gỡ cài đặt Game",
+  "msg_VerifySuccess": "Đã đặt lại trạng thái! Lần tới bấm KHỞI ĐỘNG, hệ thống sẽ quét và tải lại các tệp bị lỗi/thiếu.",
+  "msg_UninstallConfirm": "Bạn có chắc chắn muốn xóa toàn bộ dữ liệu game không? Thao tác này sẽ xóa sạch Mods và Cài đặt.",
+  "msg_UninstallSuccess": "Đã gỡ cài đặt game thành công!",
+  "lbl_RamStr": "Dung lượng RAM (JVM)"
 }
