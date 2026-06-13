@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
-    <RootNamespace>Minecraft_Launcher</RootNamespace>
+    <RootNamespace>MinecraftLauncher</RootNamespace>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
@@ -13,7 +13,9 @@
 
   <ItemGroup>
     <Resource Include="./Assets/bg.png" />
+    <Resource Include="./Assets/bg_update.png" />
     <Resource Include="./Assets/icon.jpg" />
+    <EmbeddedResource Include="default.env" />
   </ItemGroup>
 
   <ItemGroup>

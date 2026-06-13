@@ -6,3 +6,5 @@ launcher_path.txt
 Release
 lang.txt
 .env
+ram_config.txt
+default.env

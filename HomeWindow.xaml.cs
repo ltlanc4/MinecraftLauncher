@@ -19,19 +19,24 @@ using CmlLib.Core.Auth;
 using Microsoft.Win32;
 using System.Windows.Media.Imaging;
 using DotNetEnv;
+using System.Reflection;
 
 namespace MinecraftLauncher
 {
     public partial class HomeWindow : Window
     {
-        private readonly string CURRENT_VERSION = "1.0.0";
+        private readonly string CURRENT_VERSION = "1.0.1";
         private string _username;
         private static readonly HttpClient _httpClient = new HttpClient();
 
         private string API_SERVER_URL;
-        private readonly string SESSION_FILE = "session_data.json";
-        private readonly string PATH_CONFIG_FILE = "launcher_path.txt";
-        private readonly string LANG_CONFIG_FILE = "lang.txt";
+        private readonly string _appDataFolder;
+        private readonly string SESSION_FILE;
+
+        // KHAI BÁO BIẾN QUẢN LÝ CÀI ĐẶT CHUNG (JSON)
+        private readonly string SETTINGS_FILE;
+        private LauncherSettings _appSettings = new LauncherSettings();
+        private bool _isSettingsLoaded = false; // Chốt khóa an toàn chặn ghi file lúc đang nạp UI
 
         private ServerInfoResponse _serverManifest;
         private bool _isInstalled = false;
@@ -41,33 +46,49 @@ namespace MinecraftLauncher
         private FileSystemWatcher _modsWatcher;
         private string _selectedSkinBase64 = "";
 
-        // TỪ ĐIỂN LƯU TRỮ NGÔN NGỮ (TẢI TỪ FILE .PAK)
+        // TỪ ĐIỂN LƯU TRỮ NGÔN NGỮ
         private bool _isEnglish = false;
         private Dictionary<string, string> _langDict = new Dictionary<string, string>();
-
-        // CÀI ĐẶT MỨC RAM CHO MINECRAFT
-        private readonly string RAM_CONFIG_FILE = "ram_config.txt";
-        private int _allocatedRam = 4096; // Mặc định là 4GB
 
         public HomeWindow(string username, string token, string uuid)
         {
             InitializeComponent();
-            // Lấy đường dẫn tuyệt đối đến thư mục chứa file .exe của Launcher
-            string envPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".env");
+            
+            _appDataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MinecraftLauncher");
+            if (!Directory.Exists(_appDataFolder)) Directory.CreateDirectory(_appDataFolder);
 
+            SESSION_FILE = Path.Combine(_appDataFolder, "session_data.json");
+            SETTINGS_FILE = Path.Combine(_appDataFolder, "launcher_settings.json"); // File gom chung
+
+            // Load .env
+            string envPath = Path.Combine(_appDataFolder, ".env");
             if (File.Exists(envPath))
             {
-                // Ép thư viện đọc chính xác file .env tại đường dẫn này
                 Env.Load(envPath);
             }
             else
             {
-                // Thông báo trực tiếp nếu file chưa được copy vào thư mục build
-                MessageBox.Show("Lỗi: Không tìm thấy file .env tại đường dẫn: " + envPath, "THIẾU CẤU HÌNH");
+                var assembly = Assembly.GetExecutingAssembly();
+                using (Stream stream = assembly.GetManifestResourceStream("MinecraftLauncher.default.env"))
+                {
+                    if (stream != null)
+                    {
+                        using (StreamReader reader = new StreamReader(stream))
+                        {
+                            string defaultContent = reader.ReadToEnd();
+                            File.WriteAllText(envPath, defaultContent);
+                        }
+                    }
+                    else
+                    {
+                        File.WriteAllText(envPath, "SERVER_API_IP=127.0.0.1\nSERVER_API_PORT=3000");
+                    }
+                }
+                Env.Load(envPath);
             }
+
             string serverIP = Env.GetString("SERVER_API_IP");
             string serverPort = Env.GetString("SERVER_API_PORT");
-
             API_SERVER_URL = $"http://{serverIP}:{serverPort}";
             Application.Current.MainWindow = this;
 
@@ -76,11 +97,8 @@ namespace MinecraftLauncher
             if (txtProfileDisplayUsername != null) txtProfileDisplayUsername.Text = username;
             if (txtProfileUsernameValue != null) txtProfileUsernameValue.Text = username;
 
-            if (File.Exists(LANG_CONFIG_FILE)) _isEnglish = File.ReadAllText(LANG_CONFIG_FILE).Trim() == "EN";
-            ApplyLanguage();
-
-            LoadMinecraftPath();
-            LoadRamConfig();
+            // Nạp toàn bộ cài đặt từ file JSON
+            LoadLauncherSettings();
 
             _autoSyncTimer = new DispatcherTimer();
             _autoSyncTimer.Interval = TimeSpan.FromSeconds(3);
@@ -88,53 +106,101 @@ namespace MinecraftLauncher
             _autoSyncTimer.Start();
         }
 
-        // Đọc mức RAM đã lưu ở lần chơi trước
-        private void LoadRamConfig()
+        // ================= HỆ THỐNG LƯU TRỮ JSON =================
+        private void LoadLauncherSettings()
         {
-            if (File.Exists(RAM_CONFIG_FILE))
+            if (File.Exists(SETTINGS_FILE))
             {
-                // Nếu file đã có, đọc số RAM đã lưu ra
-                if (int.TryParse(File.ReadAllText(RAM_CONFIG_FILE).Trim(), out int savedRam))
+                try
                 {
-                    _allocatedRam = savedRam;
+                    string json = File.ReadAllText(SETTINGS_FILE);
+                    _appSettings = JsonSerializer.Deserialize<LauncherSettings>(json) ?? new LauncherSettings();
                 }
-            }
-            else
-            {
-                // NẾU LẦN ĐẦU MỞ LAUNCHER: Tự động tạo file và ghi mức RAM mặc định (4096) vào
-                try 
-                { 
-                    File.WriteAllText(RAM_CONFIG_FILE, _allocatedRam.ToString()); 
-                } 
-                catch { }
+                catch { } // Nếu lỗi format, tự động dùng cấu hình mặc định
             }
 
-            // Gán giá trị vào thanh trượt Slider
-            if (this.FindName("sliderRam") is Slider sld) 
-            {
-                sld.Value = _allocatedRam;
-            }
+            // 1. Áp dụng Ngôn ngữ
+            _isEnglish = _appSettings.Language == "EN";
+            ApplyLanguage();
 
-            // Hiển thị ngay con số text lên màn hình để giao diện không bị sai
+            // 2. Áp dụng Đường dẫn cài đặt
+            if (string.IsNullOrEmpty(_appSettings.InstallPath))
+            {
+                _appSettings.InstallPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Minecraft");
+            }
+            _minecraftDirectory = EnsureMinecraftDirectory(_appSettings.InstallPath);
+            txtInstallPath.Text = _minecraftDirectory;
+
+            // 3. Áp dụng RAM lên thanh trượt
+            if (this.FindName("sliderRam") is Slider sld) sld.Value = _appSettings.AllocatedRam;
+            if (this.FindName("txtRamValue") is TextBlock txtRam) txtRam.Text = $"{_appSettings.AllocatedRam} MB ({_appSettings.AllocatedRam / 1024.0:0.#} GB)";
+
+            // 4. Áp dụng Đồ họa lên nút tick
+            if (this.FindName($"radGraphics{_appSettings.GraphicsPreset}") is RadioButton rad) rad.IsChecked = true;
+
+            // Mở khóa cho phép lưu file khi có thao tác mới
+            _isSettingsLoaded = true;
+        }
+
+        private void SaveLauncherSettings()
+        {
+            if (!_isSettingsLoaded) return; // Chặn ghi đè lúc UI đang nạp
+            try
+            {
+                var options = new JsonSerializerOptions { WriteIndented = true }; // Lưu JSON thụt lề cho đẹp
+                File.WriteAllText(SETTINGS_FILE, JsonSerializer.Serialize(_appSettings, options));
+            }
+            catch { }
+        }
+
+        private void sliderRam_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            int newRam = (int)e.NewValue;
             if (this.FindName("txtRamValue") is TextBlock txt)
             {
-                txt.Text = $"{_allocatedRam} MB ({_allocatedRam / 1024.0:0.#} GB)";
+                txt.Text = $"{newRam} MB ({newRam / 1024.0:0.#} GB)";
+            }
+
+            if (_isSettingsLoaded)
+            {
+                _appSettings.AllocatedRam = newRam;
+                SaveLauncherSettings();
             }
         }
 
-        // Sự kiện khi người chơi kéo thanh Slider
-        private void sliderRam_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private void GraphicsPreset_Checked(object sender, RoutedEventArgs e)
         {
-            _allocatedRam = (int)e.NewValue;
-            
-            // Cập nhật số hiển thị (Ví dụ: 4096 MB (4 GB))
-            if (this.FindName("txtRamValue") is TextBlock txt)
+            if (!_isSettingsLoaded) return;
+            if (sender is RadioButton rad && rad.Tag != null)
             {
-                txt.Text = $"{_allocatedRam} MB ({_allocatedRam / 1024.0:0.#} GB)";
+                _appSettings.GraphicsPreset = rad.Tag.ToString();
+                SaveLauncherSettings();
             }
-            
-            // Tự động lưu ra file
-            try { File.WriteAllText(RAM_CONFIG_FILE, _allocatedRam.ToString()); } catch { }
+        }
+
+        private string EnsureMinecraftDirectory(string path)
+        {
+            if (!path.EndsWith("Minecraft", StringComparison.OrdinalIgnoreCase)) path = Path.Combine(path, "Minecraft");
+            if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+            return path;
+        }
+
+        private void SaveMinecraftPath(string path)
+        {
+            _minecraftDirectory = EnsureMinecraftDirectory(path);
+            txtInstallPath.Text = _minecraftDirectory;
+
+            _appSettings.InstallPath = _minecraftDirectory;
+            SaveLauncherSettings();
+
+            CheckInstallationStatus();
+        }
+
+        private void ChangePath_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new System.Windows.Forms.FolderBrowserDialog();
+            dialog.Description = GetLang("msg_SelectFolder");
+            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK) SaveMinecraftPath(dialog.SelectedPath);
         }
 
         // ================= HỆ THỐNG ĐA NGÔN NGỮ =================
@@ -145,13 +211,12 @@ namespace MinecraftLauncher
                 : "Launcher cần khởi động lại để áp dụng ngôn ngữ mới. Bạn có muốn khởi động lại ngay bây giờ không?";
             string title = _isEnglish ? "RESTART REQUIRED" : "YÊU CẦU KHỞI ĐỘNG LẠI";
 
-            // GỌI HỘP THOẠI CONFIRM CUSTOM CỦA CHÚNG TA
             bool isConfirm = NotificationManager.ShowConfirm(title, message);
-
             if (isConfirm)
             {
                 _isEnglish = !_isEnglish;
-                File.WriteAllText(LANG_CONFIG_FILE, _isEnglish ? "EN" : "VI");
+                _appSettings.Language = _isEnglish ? "EN" : "VI";
+                SaveLauncherSettings(); // LƯU VÀO JSON
 
                 string currentExecutablePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
                 System.Diagnostics.Process.Start(currentExecutablePath);
@@ -173,21 +238,16 @@ namespace MinecraftLauncher
             }
             catch { }
 
-            // Tự động map dữ liệu từ JSON vào toàn bộ Giao diện WPF
             foreach (var kvp in _langDict)
             {
-                // Bỏ qua các prefix từ khóa kịch bản động
                 if (kvp.Key.StartsWith("msg_") || kvp.Key.StartsWith("btn_") || kvp.Key.StartsWith("lbl_")) continue;
-
                 var element = this.FindName(kvp.Key);
                 if (element is TextBlock tb) tb.Text = kvp.Value;
                 else if (element is Button btn) btn.Content = kvp.Value;
                 else if (element is RadioButton rad) rad.Content = kvp.Value;
             }
 
-            // Gắn thủ công các Tooltip và Button động
             if (this.FindName("btnSettings") is Button btnSet) btnSet.ToolTip = GetLang("btnSettingsTooltip");
-
             var btnUpSkin = this.FindName("btnUploadSkin") as Button;
             if (btnUpSkin != null && btnUpSkin.IsEnabled) btnUpSkin.Content = GetLang("btn_Upload");
 
@@ -216,11 +276,10 @@ namespace MinecraftLauncher
             UpdateTotalModsText();
         }
 
-        // Hàm trích xuất Text động
         private string GetLang(string key)
         {
             if (_langDict != null && _langDict.ContainsKey(key)) return _langDict[key];
-            return key; // Fallback: Trả về tên key nếu file .pak thiếu dữ liệu
+            return key;
         }
 
         private void UpdateTotalModsText()
@@ -231,40 +290,6 @@ namespace MinecraftLauncher
             if (_serverManifest == null) txtMods.Text = GetLang("msg_ReadingManifest");
             else if (_serverManifest.Success) txtMods.Text = string.Format(GetLang("msg_CheckedSync"), _serverManifest.TotalMods);
             else txtMods.Text = GetLang("msg_CannotLoadMod");
-        }
-
-
-        // ================= XỬ LÝ ĐƯỜNG DẪN CÀI ĐẶT =================
-        private void LoadMinecraftPath()
-        {
-            string baseFolder;
-            if (File.Exists(PATH_CONFIG_FILE)) baseFolder = File.ReadAllText(PATH_CONFIG_FILE).Trim();
-            else baseFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Minecraft");
-
-            _minecraftDirectory = EnsureMinecraftDirectory(baseFolder);
-            txtInstallPath.Text = _minecraftDirectory;
-        }
-
-        private string EnsureMinecraftDirectory(string path)
-        {
-            if (!path.EndsWith("Minecraft", StringComparison.OrdinalIgnoreCase)) path = Path.Combine(path, "Minecraft");
-            if (!Directory.Exists(path)) Directory.CreateDirectory(path);
-            return path;
-        }
-
-        private void SaveMinecraftPath(string path)
-        {
-            _minecraftDirectory = EnsureMinecraftDirectory(path);
-            File.WriteAllText(PATH_CONFIG_FILE, _minecraftDirectory);
-            txtInstallPath.Text = _minecraftDirectory;
-            CheckInstallationStatus();
-        }
-
-        private void ChangePath_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new System.Windows.Forms.FolderBrowserDialog();
-            dialog.Description = GetLang("msg_SelectFolder");
-            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK) SaveMinecraftPath(dialog.SelectedPath);
         }
 
         // ================= TẢI DỮ LIỆU TỪ SERVER =================
@@ -312,7 +337,6 @@ namespace MinecraftLauncher
         private async Task AutoCheckServerUpdates()
         {
             if (!btnPlay.IsEnabled) return;
-
             try
             {
                 HttpResponseMessage response = await _httpClient.GetAsync($"{API_SERVER_URL}/auth/server-info");
@@ -459,6 +483,69 @@ namespace MinecraftLauncher
             }
         }
 
+        // ================= HỆ THỐNG BƠM CẤU HÌNH ĐỒ HỌA =================
+        private void ApplyGraphicsPresetToMinecraft(string optionsFilePath)
+        {
+            var settingsToInject = new Dictionary<string, string>();
+
+            switch (_appSettings.GraphicsPreset)
+            {
+                case "Low":
+                    settingsToInject["renderDistance"] = "6";
+                    settingsToInject["graphicsMode"] = "FAST";
+                    settingsToInject["particles"] = "2"; // Minimal
+                    settingsToInject["entityDistanceScaling"] = "0.5";
+                    break;
+                case "Medium":
+                    settingsToInject["renderDistance"] = "12";
+                    settingsToInject["graphicsMode"] = "FANCY";
+                    settingsToInject["particles"] = "1"; // Decreased
+                    settingsToInject["entityDistanceScaling"] = "1.0";
+                    break;
+                case "High":
+                    settingsToInject["renderDistance"] = "18";
+                    settingsToInject["graphicsMode"] = "FANCY";
+                    settingsToInject["particles"] = "0"; // All
+                    settingsToInject["entityDistanceScaling"] = "1.5";
+                    break;
+                case "Ultra":
+                    settingsToInject["renderDistance"] = "24";
+                    settingsToInject["graphicsMode"] = "FABULOUS";
+                    settingsToInject["particles"] = "0";
+                    settingsToInject["entityDistanceScaling"] = "2.0";
+                    break;
+            }
+
+            if (File.Exists(optionsFilePath))
+            {
+                try
+                {
+                    var lines = File.ReadAllLines(optionsFilePath).ToList();
+                    for (int i = 0; i < lines.Count; i++)
+                    {
+                        string[] parts = lines[i].Split(':');
+                        if (parts.Length > 0 && settingsToInject.ContainsKey(parts[0]))
+                        {
+                            lines[i] = $"{parts[0]}:{settingsToInject[parts[0]]}";
+                            settingsToInject.Remove(parts[0]);
+                        }
+                    }
+                    foreach (var kvp in settingsToInject) lines.Add($"{kvp.Key}:{kvp.Value}");
+                    File.WriteAllLines(optionsFilePath, lines);
+                }
+                catch { }
+            }
+            else
+            {
+                try
+                {
+                    var newLines = settingsToInject.Select(kvp => $"{kvp.Key}:{kvp.Value}").ToList();
+                    File.WriteAllLines(optionsFilePath, newLines);
+                }
+                catch { }
+            }
+        }
+
         // ================= XỬ LÝ KHỞI ĐỘNG TRÒ CHƠI =================
         private async void PlayButton_Click(object sender, RoutedEventArgs e)
         {
@@ -533,10 +620,13 @@ namespace MinecraftLauncher
                     catch { }
                 }
 
+                // --- BƠM CẤU HÌNH ĐỒ HỌA TRƯỚC KHI VÀO GAME ---
+                ApplyGraphicsPresetToMinecraft(optionsFile);
+
                 var launchOption = new MLaunchOption
                 {
                     Session = MSession.GetOfflineSession(_username),
-                    MaximumRamMb = _allocatedRam, // <--- SỬA LẠI DÒNG NÀY (Truyền RAM linh hoạt)
+                    MaximumRamMb = _appSettings.AllocatedRam, // Sử dụng RAM từ JSON
                     ServerIp = string.IsNullOrEmpty(_serverManifest.Server_Ip) ? "127.0.0.1" : _serverManifest.Server_Ip,
                     ServerPort = _serverManifest.Server_Port > 0 ? _serverManifest.Server_Port : 25565
                 };
@@ -604,23 +694,18 @@ namespace MinecraftLauncher
         }
 
         // ================= XỬ LÝ MENU GAME (CẠNH NÚT PLAY) =================
-
-        // 1. Ép Menu sổ ra khi bấm chuột TRÁI (Mặc định ContextMenu chỉ ra khi bấm chuột phải)
         private void btnGameMenu_Click(object sender, RoutedEventArgs e)
         {
             if (btnGameMenu.ContextMenu != null)
             {
                 btnGameMenu.ContextMenu.PlacementTarget = btnGameMenu;
-                btnGameMenu.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Top; // Cho menu chĩa lên trên
+                btnGameMenu.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Top;
                 btnGameMenu.ContextMenu.IsOpen = true;
             }
         }
 
-        // 2. Mở thư mục Game bằng Windows Explorer
         private void menuOpenFolder_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(_minecraftDirectory)) LoadMinecraftPath(); // Nếu chưa nạp path thì nạp lại
-            
             if (Directory.Exists(_minecraftDirectory))
             {
                 Process.Start(new ProcessStartInfo()
@@ -636,7 +721,6 @@ namespace MinecraftLauncher
             }
         }
 
-        // 3. Xác thực tệp (Quét mã Hash, phục hồi file game gốc và Mods)
         private async void menuVerify_Click(object sender, RoutedEventArgs e)
         {
             if (_serverManifest == null)
@@ -645,7 +729,6 @@ namespace MinecraftLauncher
                 return;
             }
 
-            // 1. Khóa giao diện để tránh người chơi bấm nhiều lần
             btnPlay.IsEnabled = false;
             if (this.FindName("btnGameMenu") is Button btnMenu) btnMenu.IsEnabled = false;
 
@@ -656,11 +739,9 @@ namespace MinecraftLauncher
 
             try
             {
-                if (string.IsNullOrEmpty(_minecraftDirectory)) LoadMinecraftPath();
                 var path = new MinecraftPath(_minecraftDirectory);
                 var launcher = new CMLauncher(path);
 
-                // 2. Gắn sự kiện để cập nhật thanh ProgressBar khi CmlLib quét và phục hồi file
                 launcher.FileChanged += (fileEvent) =>
                 {
                     Dispatcher.Invoke(() =>
@@ -676,7 +757,6 @@ namespace MinecraftLauncher
 
                 string targetVersion = GetTargetVersionName();
 
-                // 3. Xử lý tải lại file cấu hình Fabric (Phòng trường hợp người chơi xóa nhầm file json của Loader)
                 if (targetVersion.StartsWith("fabric-loader"))
                 {
                     string versionDir = Path.Combine(path.Versions, targetVersion);
@@ -691,16 +771,12 @@ namespace MinecraftLauncher
                 }
 
                 Dispatcher.Invoke(() => { if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = "Đang quét mã Hash và phục hồi file game gốc..."; });
-                
-                // 4. Kích hoạt cỗ máy Verify của CmlLib (Tự động tải bù file thiếu/hỏng từ Fabric). Lấy cấu trúc chi tiết của phiên bản và kích hoạt cỗ máy Verify
                 var versionInfo = await launcher.GetVersionAsync(targetVersion);
                 await launcher.CheckAndDownloadAsync(versionInfo);
 
-                // 5. Quét và đồng bộ lại Mods từ Server của bạn
                 Dispatcher.Invoke(() => { if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = "Đang kiểm tra và đồng bộ Mods..."; });
                 await SyncModsAsync(Path.Combine(path.BasePath, "mods"));
 
-                // 6. Hoàn tất
                 Dispatcher.Invoke(() =>
                 {
                     CheckInstallationStatus();
@@ -715,7 +791,6 @@ namespace MinecraftLauncher
             }
             finally
             {
-                // Mở khóa lại giao diện
                 Dispatcher.Invoke(() =>
                 {
                     btnPlay.IsEnabled = true;
@@ -725,7 +800,6 @@ namespace MinecraftLauncher
             }
         }
 
-        // 4. Gỡ cài đặt (Xóa trắng thư mục)
         private void menuUninstall_Click(object sender, RoutedEventArgs e)
         {
             string title = _isEnglish ? "UNINSTALL" : "GỠ CÀI ĐẶT";
@@ -736,26 +810,20 @@ namespace MinecraftLauncher
             {
                 try
                 {
-                    if (string.IsNullOrEmpty(_minecraftDirectory)) LoadMinecraftPath();
-
                     if (Directory.Exists(_minecraftDirectory))
                     {
-                        Directory.Delete(_minecraftDirectory, true); // True = Xóa toàn bộ file và thư mục con bên trong
+                        Directory.Delete(_minecraftDirectory, true);
                         NotificationManager.Show(_isEnglish ? "SUCCESS" : "THÀNH CÔNG", GetLang("msg_UninstallSuccess"));
                     }
                 }
                 catch (Exception ex)
                 {
-                    // Lỗi này thường do game đang mở mà cố tình gỡ cài đặt
                     NotificationManager.Show(GetLang("msg_Error"), ex.Message);
                 }
             }
         }
 
-        // ===============================================================
-        // QUẢN LÝ SKIN NHÂN VẬT
-        // ===============================================================
-
+        // ================= QUẢN LÝ SKIN NHÂN VẬT =================
         private ImageSource GetSkinFace(BitmapSource skinBitmap)
         {
             var baseHead = new CroppedBitmap(skinBitmap, new Int32Rect(8, 8, 8, 8));
@@ -849,10 +917,7 @@ namespace MinecraftLauncher
             finally { Dispatcher.Invoke(() => { if (btnUpload != null) btnUpload.Content = GetLang("btn_Upload"); }); }
         }
 
-        // ===============================================================
-        // CÁC HÀM XỬ LÝ HỒ SƠ NHÂN VẬT (TAB PROFILE)
-        // ===============================================================
-
+        // ================= CÁC HÀM XỬ LÝ HỒ SƠ NHÂN VẬT =================
         private async void btnSendPasswordOtp_Click(object sender, RoutedEventArgs e)
         {
             var txtOldPass = this.FindName("txtOldPassword") as PasswordBox;
@@ -956,7 +1021,6 @@ namespace MinecraftLauncher
             catch (Exception ex) { Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msg_ConnectionError"), ex.Message)); }
         }
 
-        // ------------------ ĐỔI EMAIL ------------------
         private async void btnSendEmailOtp_Click(object sender, RoutedEventArgs e)
         {
             var txtEmail = this.FindName("txtNewEmail") as TextBox;
@@ -1042,7 +1106,6 @@ namespace MinecraftLauncher
         {
             try
             {
-                // Mở hộp thoại cho phép người chơi chọn file .zip
                 var openFileDialog = new OpenFileDialog
                 {
                     Filter = "Shaderpack (*.zip)|*.zip",
@@ -1051,41 +1114,23 @@ namespace MinecraftLauncher
 
                 if (openFileDialog.ShowDialog() == true)
                 {
-                    // Đảm bảo đã có đường dẫn cài game
-                    if (string.IsNullOrEmpty(_minecraftDirectory)) LoadMinecraftPath();
+                    if (string.IsNullOrEmpty(_minecraftDirectory)) LoadLauncherSettings();
 
-                    // Xác định thư mục shaderpacks
                     string shaderPacksDir = Path.Combine(_minecraftDirectory, "shaderpacks");
+                    if (!Directory.Exists(shaderPacksDir)) Directory.CreateDirectory(shaderPacksDir);
 
-                    // Nếu chưa có thư mục này (game chưa chạy lần nào) thì tự động tạo
-                    if (!Directory.Exists(shaderPacksDir))
-                    {
-                        Directory.CreateDirectory(shaderPacksDir);
-                    }
-
-                    // Đường dẫn file gốc và đường dẫn đích
                     string sourceFilePath = openFileDialog.FileName;
                     string fileName = Path.GetFileName(sourceFilePath);
                     string destFilePath = Path.Combine(shaderPacksDir, fileName);
 
-                    // Copy file vào thư mục shaderpacks (nếu trùng tên thì ghi đè)
                     File.Copy(sourceFilePath, destFilePath, true);
-
-                    // Hiển thị thông báo thành công
                     NotificationManager.Show(GetLang("msg_Success"), GetLang("msg_ShaderSuccess"));
                 }
             }
-            catch (Exception ex)
-            {
-                // Nếu bị lỗi (thiếu quyền, file đang mở...) thì báo lỗi
-                NotificationManager.Show(GetLang("msg_Error"), ex.Message);
-            }
+            catch (Exception ex) { NotificationManager.Show(GetLang("msg_Error"), ex.Message); }
         }
 
-        // ===============================================================
-        // SỰ KIỆN CHUYỂN TAB CÓ ANIMATION MƯỢT MÀ
-        // ===============================================================
-
+        // ================= SỰ KIỆN ANIMATION CHUYỂN TAB =================
         private void PlayTransitionAnimation(FrameworkElement targetPanel, params FrameworkElement[] panelsToHide)
         {
             if (targetPanel == null) return;
@@ -1190,10 +1235,6 @@ namespace MinecraftLauncher
             PlayTransitionAnimation(p2, p1);
         }
 
-        // ===============================================================
-        // CÁC SỰ KIỆN ĐIỀU KHIỂN CỬA SỔ CHUNG
-        // ===============================================================
-
         // ================= HỆ THỐNG CẬP NHẬT CLIENT =================
         private async Task CheckForLauncherUpdate()
         {
@@ -1205,110 +1246,72 @@ namespace MinecraftLauncher
                     string json = await response.Content.ReadAsStringAsync();
                     var updateInfo = JsonSerializer.Deserialize<UpdateInfo>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                    if (updateInfo != null && !string.IsNullOrEmpty(updateInfo.Version) && updateInfo.Version != CURRENT_VERSION)
+                    if (updateInfo != null && !string.IsNullOrEmpty(updateInfo.Version))
                     {
-                        Dispatcher.Invoke(() =>
+                        updateInfo.Version = updateInfo.Version.Replace(".zip", "", StringComparison.OrdinalIgnoreCase);
+
+                        if (IsServerVersionNewer(updateInfo.Version, CURRENT_VERSION))
                         {
-                            if (this.FindName("btnUpdateClient") is Button btnUpdate)
+                            Dispatcher.Invoke(() =>
                             {
-                                btnUpdate.Visibility = Visibility.Visible;
-                                // LƯU Ý SỬA LỖI: Lưu toàn bộ đối tượng updateInfo vào Tag thay vì chỉ lưu mỗi link URL
-                                btnUpdate.Tag = updateInfo;
-                            }
-                        });
+                                if (this.FindName("btnUpdateClient") is Button btnUpdate)
+                                {
+                                    btnUpdate.Visibility = Visibility.Visible;
+                                    btnUpdate.Tag = updateInfo;
+                                }
+                            });
+                        }
                     }
                 }
             }
             catch { }
         }
 
-        private async void btnUpdateClient_Click(object sender, RoutedEventArgs e)
+        private bool IsServerVersionNewer(string serverVer, string clientVer)
         {
-            // Lấy lại đối tượng updateInfo từ nút bấm
+            if (string.IsNullOrEmpty(serverVer) || string.IsNullOrEmpty(clientVer)) return false;
+
+            serverVer = serverVer.TrimStart('v', 'V').Trim();
+            clientVer = clientVer.TrimStart('v', 'V').Trim();
+
+            if (serverVer == clientVer) return false;
+
+            string[] sParts = serverVer.Split('-');
+            string[] cParts = clientVer.Split('-');
+
+            if (Version.TryParse(sParts[0], out Version sVersion) && Version.TryParse(cParts[0], out Version cVersion))
+            {
+                if (sVersion > cVersion) return true;
+                if (sVersion < cVersion) return false;
+
+                if (sVersion == cVersion)
+                {
+                    if (sParts.Length == 1 && cParts.Length > 1) return false;
+                    if (sParts.Length > 1 && cParts.Length == 1) return true;
+
+                    if (sParts.Length > 1 && cParts.Length > 1)
+                    {
+                        return string.Compare(sParts[1], cParts[1], StringComparison.OrdinalIgnoreCase) > 0;
+                    }
+                }
+            }
+            return serverVer != clientVer;
+        }
+
+        private void btnUpdateClient_Click(object sender, RoutedEventArgs e)
+        {
             var updateInfo = (sender as Button)?.Tag as UpdateInfo;
             if (updateInfo == null || string.IsNullOrEmpty(updateInfo.DownloadUrl)) return;
 
             string title = GetLang("msg_UpdateAvailableTitle");
-
-            // LƯU Ý SỬA LỖI: Dùng string.Format để thay thế chữ {0} bằng số phiên bản (updateInfo.Version)
             string desc = string.Format(GetLang("msg_UpdateAvailableDesc"), updateInfo.Version);
 
-            // Hỏi người dùng có muốn update không
-            bool doUpdate = NotificationManager.ShowConfirm(title, desc);
-            if (doUpdate)
+            if (NotificationManager.ShowConfirm(title, desc))
             {
-                await DownloadAndApplyUpdate(updateInfo.DownloadUrl);
-            }
-        }
-
-        private async Task DownloadAndApplyUpdate(string downloadUrl)
-        {
-            btnPlay.IsEnabled = false;
-            if (this.FindName("btnUpdateClient") is Button btnUpd) btnUpd.IsEnabled = false;
-
-            var progressContainer = this.FindName("DownloadProgressContainer") as FrameworkElement;
-            if (progressContainer != null) progressContainer.Visibility = Visibility.Visible;
-
-            Dispatcher.Invoke(() =>
-            {
-                if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = GetLang("msg_DownloadingUpdate");
-                if (this.FindName("pbDownload") is ProgressBar pb) { pb.IsIndeterminate = true; }
-                if (this.FindName("txtDownloadDetail") is TextBlock td) td.Text = "Đang tải file nén...";
-                if (this.FindName("txtDownloadPercentage") is TextBlock tp) tp.Text = "";
-            });
-
-            try
-            {
-                // 1. Tải file .zip từ Server về
-                string zipPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "update.zip");
-                byte[] fileBytes = await _httpClient.GetByteArrayAsync(downloadUrl);
-                await File.WriteAllBytesAsync(zipPath, fileBytes);
-
-                // Lấy tên file chạy gốc (vd: MinecraftLauncher.exe)
-                string currentExeName = Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName);
-
-                // 2. Tạo kịch bản script .bat sử dụng PowerShell để giải nén (Force đè file cũ)
-                string batPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "update.bat");
-                string batContent = $@"
-@echo off
-:: Chờ 3 giây để Launcher C# hiện tại tắt hoàn toàn (nhả file dll ra)
-timeout /t 3 /nobreak > NUL
-
-:: Dùng PowerShell giải nén update.zip đè lên thư mục hiện tại
-powershell -Command ""Expand-Archive -Path 'update.zip' -DestinationPath '.' -Force""
-
-:: Xóa file zip rác
-del ""update.zip""
-
-:: Khởi động lại Launcher
-start """" ""{currentExeName}""
-
-:: Tự hủy file bat này
-del ""%~f0""
-";
-                File.WriteAllText(batPath, batContent);
-
-                // 3. Khởi chạy file Script ngầm và lập tức tắt Launcher
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = batPath,
-                    WindowStyle = ProcessWindowStyle.Hidden,
-                    CreateNoWindow = true,
-                    UseShellExecute = true
-                });
-
-                Application.Current.Shutdown();
-            }
-            catch (Exception ex)
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    if (progressContainer != null) progressContainer.Visibility = Visibility.Collapsed;
-                    if (this.FindName("pbDownload") is ProgressBar pb) { pb.IsIndeterminate = false; }
-                    btnPlay.IsEnabled = true;
-                    if (this.FindName("btnUpdateClient") is Button btnUpdate) btnUpdate.IsEnabled = true;
-                    NotificationManager.Show(GetLang("msg_Error"), ex.Message);
-                });
+                // Mở cửa sổ Updater chuyên dụng và tắt màn hình chính
+                UpdateWindow updater = new UpdateWindow(updateInfo.DownloadUrl);
+                updater.Show();
+                this.Close();
             }
         }
 
@@ -1365,5 +1368,12 @@ del ""%~f0""
     {
         public string Version { get; set; }
         public string DownloadUrl { get; set; }
+    }
+    public class LauncherSettings
+    {
+        public int AllocatedRam { get; set; } = 4096;
+        public string GraphicsPreset { get; set; } = "Medium";
+        public string Language { get; set; } = "EN";
+        public string InstallPath { get; set; } = "";
     }
 }

@@ -1,0 +1,83 @@
+<Window x:Class="MinecraftLauncher.UpdateWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Cập nhật Minecraft Launcher" Height="450" Width="350" 
+        WindowStyle="None" WindowStartupLocation="CenterScreen" 
+        Background="Transparent" AllowsTransparency="True" ResizeMode="NoResize">
+
+    <Window.Resources>
+        <Style TargetType="ProgressBar" x:Key="SakuraProgressBarStyle">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Border Background="#40FFB7C5" CornerRadius="6" BorderBrush="#33FF6B9E" BorderThickness="1">
+                            
+                            <Grid>
+                                <Border x:Name="PART_Track"/>
+                                
+                                <Border x:Name="PART_Indicator" HorizontalAlignment="Left" CornerRadius="5">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#FFFFB7C5" Offset="0.0" />
+                                            <GradientStop Color="#FFFF6B9E" Offset="1.0" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                            </Grid>
+                            
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <!-- Khung chính của cửa sổ bo góc 12px -->
+    <Border CornerRadius="12" ClipToBounds="True" Background="#1E1E1E">
+        <Grid>
+            <!-- Định dạng bố cục: Nền ở trên (chiếm hết chỗ trống), Thanh tiến trình ở dưới đáy -->
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- ẢNH NỀN SAKURA (Tràn qua cả 2 dòng) -->
+            <!-- Đảm bảo file bg.png đã được set Build Action là "Resource" -->
+            <Image Grid.Row="0" Grid.RowSpan="2" Source="pack://application:,,,/Assets/bg_update.png"/>
+
+            <!-- BẢNG ĐIỀU KHIỂN TIẾN TRÌNH Ở ĐÁY -->
+            <Border Grid.Row="1" Background="#E6FFFFFF" Padding="20,15,20,20">
+                <StackPanel>
+                    
+                    <!-- Tiêu đề Cập nhật -->
+                    <TextBlock Text="ĐANG TẢI BẢN CẬP NHẬT" 
+                               Foreground="#FF6B9E" FontSize="16" FontWeight="Bold" 
+                               HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                    
+                    <!-- Khung chứa thanh tiến trình và phần trăm -->
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Thanh chạy ProgressBar mượt mà -->
+                        <ProgressBar x:Name="pbDownload" Grid.Column="0" Height="12" 
+                                     Minimum="0" Maximum="100" Value="0" 
+                                     Style="{StaticResource SakuraProgressBarStyle}"/>
+
+                        <!-- Chữ hiển thị phần trăm (Ví dụ: 45%) -->
+                        <TextBlock x:Name="txtPercentage" Grid.Column="1" Text="0%" 
+                                   Foreground="#FF6B9E" FontSize="13" FontWeight="Bold" 
+                                   Margin="10,0,0,0" VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <!-- Trạng thái tiến trình chi tiết (MB) -->
+                    <TextBlock x:Name="txtStatus" Text="Đang kết nối với máy chủ..." 
+                               Foreground="#888888" FontSize="12" FontStyle="Italic" 
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

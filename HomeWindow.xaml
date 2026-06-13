@@ -15,7 +15,7 @@
     <Window.Resources>
         <!-- STYLE CHO CỤC KÉO (THUMB) HÌNH TRÒN CỦA SLIDER -->
         <Style x:Key="SakuraSliderThumbStyle"
-                TargetType="Thumb">
+               TargetType="Thumb">
             <Setter Property="OverridesDefaultStyle"
                     Value="true"/>
             <Setter Property="Template">
@@ -23,23 +23,23 @@
                     <ControlTemplate TargetType="Thumb">
                         <!-- Sử dụng Ellipse để tạo khối tròn thay vì hình chữ nhật -->
                         <Ellipse x:Name="ellipse"
-                                Fill="#F36895"
-                                Width="18"
-                                Height="18"
-                                Stroke="#FFFFFF"
-                                StrokeThickness="2"
-                                Cursor="Hand">
+                                 Fill="#F36895"
+                                 Width="18"
+                                 Height="18"
+                                 Stroke="#FFFFFF"
+                                 StrokeThickness="2"
+                                 Cursor="Hand">
                             <Ellipse.Effect>
                                 <DropShadowEffect BlurRadius="6"
-                                        ShadowDepth="0"
-                                        Color="#F36895"
-                                        Opacity="0.5"/>
+                                                  ShadowDepth="0"
+                                                  Color="#F36895"
+                                                  Opacity="0.5"/>
                             </Ellipse.Effect>
                         </Ellipse>
                         <ControlTemplate.Triggers>
                             <!-- Hiệu ứng khi rê chuột vào cục tròn -->
                             <Trigger Property="IsMouseOver"
-                                    Value="true">
+                                     Value="true">
                                 <Setter TargetName="ellipse"
                                         Property="Fill"
                                         Value="#FA8EB1"/>
@@ -52,7 +52,7 @@
                             </Trigger>
                             <!-- Hiệu ứng khi đang nhấn giữ kéo -->
                             <Trigger Property="IsDragging"
-                                    Value="true">
+                                     Value="true">
                                 <Setter TargetName="ellipse"
                                         Property="Fill"
                                         Value="#FFFFFF"/>
@@ -68,7 +68,7 @@
 
         <!-- STYLE CHO TOÀN BỘ THANH SLIDER SAKURA -->
         <Style x:Key="SakuraSliderStyle"
-                TargetType="Slider">
+               TargetType="Slider">
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Slider">
@@ -76,7 +76,7 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"
-                                        MinHeight="{TemplateBinding MinHeight}"/>
+                                               MinHeight="{TemplateBinding MinHeight}"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
@@ -88,7 +88,7 @@
                                     Margin="5,0"/>
 
                             <Track Grid.Row="1"
-                                    x:Name="PART_Track">
+                                   x:Name="PART_Track">
                                 <!-- Đoạn thanh trượt ĐÃ ĐƯỢC KÉO TỚI (Filled Track) - Màu hồng đặc -->
                                 <Track.DecreaseRepeatButton>
                                     <RepeatButton Command="{x:Static Slider.DecreaseLarge}">
@@ -115,7 +115,7 @@
                                 <!-- Áp dụng cục kéo hình tròn đã thiết kế ở trên -->
                                 <Track.Thumb>
                                     <Thumb Style="{StaticResource SakuraSliderThumbStyle}"
-                                            VerticalAlignment="Center"/>
+                                           VerticalAlignment="Center"/>
                                 </Track.Thumb>
                             </Track>
                         </Grid>
@@ -1407,6 +1407,39 @@
                                     ValueChanged="sliderRam_ValueChanged"
                                     Width="300"
                                     x:Name="sliderRam"/>
+                                    
+                            <TextBlock Text="CẤU HÌNH ĐỒ HỌA (PRESET)"
+                                    Foreground="#FF6B9E"
+                                    FontSize="14"
+                                    FontWeight="Bold"
+                                    Margin="0,20,0,10"/>
+
+                            <StackPanel Orientation="Horizontal"
+                                    Margin="0,0,0,20">
+                                <RadioButton x:Name="radGraphicsLow"
+                                        Content="Low (Yếu)"
+                                        Foreground="White"
+                                        Margin="0,0,15,0"
+                                        Checked="GraphicsPreset_Checked"
+                                        Tag="Low"/>
+                                <RadioButton x:Name="radGraphicsMedium"
+                                        Content="Medium (Vừa)"
+                                        Foreground="White"
+                                        Margin="0,0,15,0"
+                                        Checked="GraphicsPreset_Checked"
+                                        Tag="Medium"/>
+                                <RadioButton x:Name="radGraphicsHigh"
+                                        Content="High (Cao)"
+                                        Foreground="White"
+                                        Margin="0,0,15,0"
+                                        Checked="GraphicsPreset_Checked"
+                                        Tag="High"/>
+                                <RadioButton x:Name="radGraphicsUltra"
+                                        Content="Ultra (Máy Khủng)"
+                                        Foreground="White"
+                                        Checked="GraphicsPreset_Checked"
+                                        Tag="Ultra"/>
+                            </StackPanel>
 
                             <TextBlock x:Name="lblShaderStr"
                                        Text="Quản lý Shader (Gói đồ họa)"

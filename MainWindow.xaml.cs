@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
 using DotNetEnv;
+using System.Reflection;
 
 namespace MinecraftLauncher
 {
@@ -22,31 +18,62 @@ namespace MinecraftLauncher
 
         // ĐỊA CHỈ BACKEND API
         private string API_BASE_URL;
-
+        // TÊN TỆP LƯU TRỮ DATA
+        private readonly string _appDataFolder;
         // TÊN TỆP LƯU TRỮ PHIÊN ĐĂNG NHẬP
-        private readonly string SESSION_FILE = "session_data.json";
-
+        private readonly string SESSION_FILE;
         // BIẾN NGÔN NGỮ
-        private readonly string LANG_CONFIG_FILE = "lang.txt";
+        private readonly string LANG_CONFIG_FILE;
         private bool _isEnglish = true; // Mặc định là Tiếng Anh
         private Dictionary<string, string> _langDict = new Dictionary<string, string>();
 
         public MainWindow()
         {
+            // --- TỰ ĐỘNG DỌN RÁC SAU KHI CẬP NHẬT ---
+            string oldExePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName + ".old";
+            if (File.Exists(oldExePath))
+            {
+                try { File.Delete(oldExePath); } catch { }
+            }
+            // ----------------------------------------
             InitializeComponent();
-            // Lấy đường dẫn tuyệt đối đến thư mục chứa file .exe của Launcher
-            string envPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".env");
 
+            _appDataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MinecraftLauncher");
+            if (!Directory.Exists(_appDataFolder)) Directory.CreateDirectory(_appDataFolder);
+
+            SESSION_FILE = Path.Combine(_appDataFolder, "session_data.json");
+            LANG_CONFIG_FILE = Path.Combine(_appDataFolder, "lang.txt");
+
+            // Lấy đường dẫn tuyệt đối đến thư mục chứa file .exe của Launcher
+            string envPath = Path.Combine(_appDataFolder, ".env");
+
+            var assembly = Assembly.GetExecutingAssembly();
             if (File.Exists(envPath))
             {
-                // Ép thư viện đọc chính xác file .env tại đường dẫn này
-                Env.Load(envPath);
+                DotNetEnv.Env.Load(envPath);
             }
             else
             {
-                // Thông báo trực tiếp nếu file chưa được copy vào thư mục build
-                MessageBox.Show("Lỗi: Không tìm thấy file .env tại đường dẫn: " + envPath, "THIẾU CẤU HÌNH");
+                // Cú pháp tên file nhúng: [Tên_Namespace].[Tên_File]
+                // Hãy đối chiếu tên trong cái bảng MessageBox vừa nảy lên để sửa lại chuỗi này cho ĐÚNG 100%
+                using (Stream stream = assembly.GetManifestResourceStream("MinecraftLauncher.default.env"))
+                {
+                    if (stream != null)
+                    {
+                        using (StreamReader reader = new StreamReader(stream))
+                        {
+                            string defaultContent = reader.ReadToEnd();
+                            File.WriteAllText(envPath, defaultContent);
+                        }
+                    }
+                    else
+                    {
+                        File.WriteAllText(envPath, "SERVER_API_IP=127.0.0.1\nSERVER_API_PORT=3000");
+                    }
+                }
+                DotNetEnv.Env.Load(envPath);
             }
+
             string serverIP = Env.GetString("SERVER_API_IP");
             string serverPort = Env.GetString("SERVER_API_PORT");
 
