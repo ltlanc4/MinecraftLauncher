@@ -111,14 +111,15 @@ namespace MinecraftLauncher
             }
         }
 
-        // Hàm mới: Trả về True nếu chọn Đồng Ý, False nếu chọn Hủy Bỏ
-        public static bool ShowConfirm(string title, string message)
+        public static bool ShowConfirm(string title, string message, string confirmText = "ĐỒNG Ý", string cancelText = "HỦY BỎ")
         {
             bool isConfirm = false;
             Application.Current.Dispatcher.Invoke(() =>
             {
                 ConfirmWindow confirmWin = new ConfirmWindow(title, message);
-                
+                confirmWin.btnYes.Content = confirmText;
+                confirmWin.btnNo.Content = cancelText;
+
                 // Neo cửa sổ Confirm vào giữa cửa sổ chính đang mở
                 if (Application.Current.MainWindow != null && Application.Current.MainWindow.IsVisible)
                 {

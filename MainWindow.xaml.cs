@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -20,10 +22,12 @@ namespace MinecraftLauncher
         private string API_BASE_URL;
         // TÊN TỆP LƯU TRỮ DATA
         private readonly string _appDataFolder;
-        // TÊN TỆP LƯU TRỮ PHIÊN ĐĂNG NHẬP
+        
+        // CÁC FILE LƯU TRỮ CHUẨN MỚI
         private readonly string SESSION_FILE;
+        private readonly string SETTINGS_FILE; // File gom chung cài đặt
+
         // BIẾN NGÔN NGỮ
-        private readonly string LANG_CONFIG_FILE;
         private bool _isEnglish = true; // Mặc định là Tiếng Anh
         private Dictionary<string, string> _langDict = new Dictionary<string, string>();
 
@@ -41,8 +45,9 @@ namespace MinecraftLauncher
             _appDataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MinecraftLauncher");
             if (!Directory.Exists(_appDataFolder)) Directory.CreateDirectory(_appDataFolder);
 
+            // Gắn đường dẫn file chuẩn mới
             SESSION_FILE = Path.Combine(_appDataFolder, "session_data.json");
-            LANG_CONFIG_FILE = Path.Combine(_appDataFolder, "lang.txt");
+            SETTINGS_FILE = Path.Combine(_appDataFolder, "launcher_settings.json");
 
             // Lấy đường dẫn tuyệt đối đến thư mục chứa file .exe của Launcher
             string envPath = Path.Combine(_appDataFolder, ".env");
@@ -55,7 +60,6 @@ namespace MinecraftLauncher
             else
             {
                 // Cú pháp tên file nhúng: [Tên_Namespace].[Tên_File]
-                // Hãy đối chiếu tên trong cái bảng MessageBox vừa nảy lên để sửa lại chuỗi này cho ĐÚNG 100%
                 using (Stream stream = assembly.GetManifestResourceStream("MinecraftLauncher.default.env"))
                 {
                     if (stream != null)
@@ -85,16 +89,22 @@ namespace MinecraftLauncher
             // Lắng nghe sự kiện để tự động điền tài khoản khi mở Launcher
             this.Loaded += MainWindow_Loaded;
 
-            // KIỂM TRA NGÔN NGỮ: Nếu chưa có file thì tạo mặc định là Tiếng Anh
-            if (File.Exists(LANG_CONFIG_FILE))
+            // ================= ĐỌC NGÔN NGỮ TỪ FILE JSON CHUNG =================
+            if (File.Exists(SETTINGS_FILE))
             {
-                _isEnglish = File.ReadAllText(LANG_CONFIG_FILE).Trim() == "EN";
+                try
+                {
+                    string json = File.ReadAllText(SETTINGS_FILE);
+                    var settings = JsonSerializer.Deserialize<LauncherSettings>(json);
+                    _isEnglish = (settings != null && settings.Language == "EN");
+                }
+                catch { _isEnglish = true; } // Lỗi thì về mặc định
             }
             else
             {
-                File.WriteAllText(LANG_CONFIG_FILE, "EN");
                 _isEnglish = true;
             }
+            
             ApplyLanguage();
         }
 
@@ -106,14 +116,35 @@ namespace MinecraftLauncher
                 : "Launcher cần khởi động lại để áp dụng ngôn ngữ mới. Bạn có muốn khởi động lại ngay bây giờ không?";
             string title = _isEnglish ? "RESTART REQUIRED" : "YÊU CẦU KHỞI ĐỘNG LẠI";
 
-            // GỌI HỘP THOẠI CONFIRM CUSTOM CỦA CHÚNG TA
-            bool isConfirm = NotificationManager.ShowConfirm(title, message);
+            // --- THÊM 2 DÒNG NÀY ĐỂ DỊCH NÚT BẤM ---
+            string btnConfirmText = _isEnglish ? "CONFIRM" : "ĐỒNG Ý";
+            string btnCancelText = _isEnglish ? "CANCEL" : "HỦY BỎ";
+
+            // Truyền tên nút bấm vào hộp thoại
+            bool isConfirm = NotificationManager.ShowConfirm(title, message, btnConfirmText, btnCancelText);
 
             if (isConfirm)
             {
                 _isEnglish = !_isEnglish;
-                File.WriteAllText(LANG_CONFIG_FILE, _isEnglish ? "EN" : "VI");
+                
+                // Đọc cài đặt JSON hiện tại (để không làm mất RAM và Path cũ)
+                LauncherSettings currentSettings = new LauncherSettings();
+                if (File.Exists(SETTINGS_FILE))
+                {
+                    try
+                    {
+                        string json = File.ReadAllText(SETTINGS_FILE);
+                        currentSettings = JsonSerializer.Deserialize<LauncherSettings>(json) ?? new LauncherSettings();
+                    }
+                    catch { }
+                }
 
+                // Cập nhật lại ngôn ngữ và lưu file
+                currentSettings.Language = _isEnglish ? "EN" : "VI";
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                File.WriteAllText(SETTINGS_FILE, JsonSerializer.Serialize(currentSettings, options));
+
+                // Khởi động lại Launcher
                 string currentExecutablePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
                 System.Diagnostics.Process.Start(currentExecutablePath);
 

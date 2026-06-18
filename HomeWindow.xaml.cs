@@ -211,15 +211,21 @@ namespace MinecraftLauncher
                 : "Launcher cần khởi động lại để áp dụng ngôn ngữ mới. Bạn có muốn khởi động lại ngay bây giờ không?";
             string title = _isEnglish ? "RESTART REQUIRED" : "YÊU CẦU KHỞI ĐỘNG LẠI";
 
-            bool isConfirm = NotificationManager.ShowConfirm(title, message);
+            // --- THÊM 2 DÒNG NÀY ĐỂ DỊCH NÚT BẤM ---
+            string btnConfirmText = _isEnglish ? "CONFIRM" : "ĐỒNG Ý";
+            string btnCancelText = _isEnglish ? "CANCEL" : "HỦY BỎ";
+
+            // Truyền tên nút bấm vào hộp thoại
+            bool isConfirm = NotificationManager.ShowConfirm(title, message, btnConfirmText, btnCancelText);
+
             if (isConfirm)
             {
                 _isEnglish = !_isEnglish;
                 _appSettings.Language = _isEnglish ? "EN" : "VI";
                 SaveLauncherSettings(); // LƯU VÀO JSON
 
-                string currentExecutablePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
-                System.Diagnostics.Process.Start(currentExecutablePath);
+                string currentExecutablePath = Process.GetCurrentProcess().MainModule.FileName;
+                Process.Start(currentExecutablePath);
 
                 Application.Current.Shutdown();
             }
@@ -483,68 +489,6 @@ namespace MinecraftLauncher
             }
         }
 
-        // ================= HỆ THỐNG BƠM CẤU HÌNH ĐỒ HỌA =================
-        private void ApplyGraphicsPresetToMinecraft(string optionsFilePath)
-        {
-            var settingsToInject = new Dictionary<string, string>();
-
-            switch (_appSettings.GraphicsPreset)
-            {
-                case "Low":
-                    settingsToInject["renderDistance"] = "6";
-                    settingsToInject["graphicsMode"] = "FAST";
-                    settingsToInject["particles"] = "2"; // Minimal
-                    settingsToInject["entityDistanceScaling"] = "0.5";
-                    break;
-                case "Medium":
-                    settingsToInject["renderDistance"] = "12";
-                    settingsToInject["graphicsMode"] = "FANCY";
-                    settingsToInject["particles"] = "1"; // Decreased
-                    settingsToInject["entityDistanceScaling"] = "1.0";
-                    break;
-                case "High":
-                    settingsToInject["renderDistance"] = "18";
-                    settingsToInject["graphicsMode"] = "FANCY";
-                    settingsToInject["particles"] = "0"; // All
-                    settingsToInject["entityDistanceScaling"] = "1.5";
-                    break;
-                case "Ultra":
-                    settingsToInject["renderDistance"] = "24";
-                    settingsToInject["graphicsMode"] = "FABULOUS";
-                    settingsToInject["particles"] = "0";
-                    settingsToInject["entityDistanceScaling"] = "2.0";
-                    break;
-            }
-
-            if (File.Exists(optionsFilePath))
-            {
-                try
-                {
-                    var lines = File.ReadAllLines(optionsFilePath).ToList();
-                    for (int i = 0; i < lines.Count; i++)
-                    {
-                        string[] parts = lines[i].Split(':');
-                        if (parts.Length > 0 && settingsToInject.ContainsKey(parts[0]))
-                        {
-                            lines[i] = $"{parts[0]}:{settingsToInject[parts[0]]}";
-                            settingsToInject.Remove(parts[0]);
-                        }
-                    }
-                    foreach (var kvp in settingsToInject) lines.Add($"{kvp.Key}:{kvp.Value}");
-                    File.WriteAllLines(optionsFilePath, lines);
-                }
-                catch { }
-            }
-            else
-            {
-                try
-                {
-                    var newLines = settingsToInject.Select(kvp => $"{kvp.Key}:{kvp.Value}").ToList();
-                    File.WriteAllLines(optionsFilePath, newLines);
-                }
-                catch { }
-            }
-        }
 
         // ================= XỬ LÝ KHỞI ĐỘNG TRÒ CHƠI =================
         private async void PlayButton_Click(object sender, RoutedEventArgs e)
@@ -619,9 +563,6 @@ namespace MinecraftLauncher
                     }
                     catch { }
                 }
-
-                // --- BƠM CẤU HÌNH ĐỒ HỌA TRƯỚC KHI VÀO GAME ---
-                ApplyGraphicsPresetToMinecraft(optionsFile);
 
                 var launchOption = new MLaunchOption
                 {
@@ -804,8 +745,10 @@ namespace MinecraftLauncher
         {
             string title = _isEnglish ? "UNINSTALL" : "GỠ CÀI ĐẶT";
             string desc = GetLang("msg_UninstallConfirm");
+            string btnConfirmText = _isEnglish ? "CONFIRM" : "ĐỒNG Ý";
+            string btnCancelText = _isEnglish ? "CANCEL" : "HỦY BỎ";
 
-            bool confirm = NotificationManager.ShowConfirm(title, desc);
+            bool confirm = NotificationManager.ShowConfirm(title, desc, btnConfirmText, btnCancelText);
             if (confirm)
             {
                 try

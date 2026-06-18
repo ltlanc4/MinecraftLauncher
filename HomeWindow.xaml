@@ -13,6 +13,60 @@
         Loaded="Window_Loaded">
 
     <Window.Resources>
+        <Style TargetType="RadioButton"
+                x:Key="SakuraRadioButtonStyle">
+            <Setter Property="Foreground"
+                    Value="White"/>
+            <Setter Property="FontSize"
+                    Value="13"/>
+            <Setter Property="Cursor"
+                    Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <StackPanel Orientation="Horizontal"
+                                Background="Transparent">
+                            <Grid Height="16"
+                                    Width="16"
+                                    Margin="0,0,6,0">
+                                <Ellipse x:Name="OuterRing"
+                                        Stroke="#888888"
+                                        StrokeThickness="1.5"
+                                        Fill="Transparent"/>
+                                <Ellipse x:Name="InnerBullet"
+                                        Fill="#FF6B9E"
+                                        Margin="4"
+                                        Opacity="0"/>
+                            </Grid>
+                            <ContentPresenter VerticalAlignment="Center"
+                                    x:Name="txtContent"/>
+                        </StackPanel>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked"
+                                    Value="True">
+                                <Setter TargetName="OuterRing"
+                                        Property="Stroke"
+                                        Value="#FF6B9E"/>
+                                <Setter TargetName="InnerBullet"
+                                        Property="Opacity"
+                                        Value="1"/>
+                                <Setter Property="Foreground"
+                                        Value="White"/>
+                                <Setter Property="FontWeight"
+                                        Value="Bold"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver"
+                                    Value="True">
+                                <Setter TargetName="OuterRing"
+                                        Property="Stroke"
+                                        Value="#FFB7C5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <!-- STYLE CHO CỤC KÉO (THUMB) HÌNH TRÒN CỦA SLIDER -->
         <Style x:Key="SakuraSliderThumbStyle"
                TargetType="Thumb">
@@ -1407,39 +1461,6 @@
                                     ValueChanged="sliderRam_ValueChanged"
                                     Width="300"
                                     x:Name="sliderRam"/>
-                                    
-                            <TextBlock Text="CẤU HÌNH ĐỒ HỌA (PRESET)"
-                                    Foreground="#FF6B9E"
-                                    FontSize="14"
-                                    FontWeight="Bold"
-                                    Margin="0,20,0,10"/>
-
-                            <StackPanel Orientation="Horizontal"
-                                    Margin="0,0,0,20">
-                                <RadioButton x:Name="radGraphicsLow"
-                                        Content="Low (Yếu)"
-                                        Foreground="White"
-                                        Margin="0,0,15,0"
-                                        Checked="GraphicsPreset_Checked"
-                                        Tag="Low"/>
-                                <RadioButton x:Name="radGraphicsMedium"
-                                        Content="Medium (Vừa)"
-                                        Foreground="White"
-                                        Margin="0,0,15,0"
-                                        Checked="GraphicsPreset_Checked"
-                                        Tag="Medium"/>
-                                <RadioButton x:Name="radGraphicsHigh"
-                                        Content="High (Cao)"
-                                        Foreground="White"
-                                        Margin="0,0,15,0"
-                                        Checked="GraphicsPreset_Checked"
-                                        Tag="High"/>
-                                <RadioButton x:Name="radGraphicsUltra"
-                                        Content="Ultra (Máy Khủng)"
-                                        Foreground="White"
-                                        Checked="GraphicsPreset_Checked"
-                                        Tag="Ultra"/>
-                            </StackPanel>
 
                             <TextBlock x:Name="lblShaderStr"
                                        Text="Quản lý Shader (Gói đồ họa)"
