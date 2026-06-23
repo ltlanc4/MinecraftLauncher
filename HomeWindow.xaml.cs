@@ -60,31 +60,22 @@ namespace MinecraftLauncher
             SESSION_FILE = Path.Combine(_appDataFolder, "session_data.json");
             SETTINGS_FILE = Path.Combine(_appDataFolder, "launcher_settings.json"); // File gom chung
 
-            // Load .env
+            // --- 1. CHIẾN DỊCH "TÌM VÀ DIỆT" FILE .ENV VẬT LÝ (BẢO MẬT) ---
             string envPath = Path.Combine(_appDataFolder, ".env");
             if (File.Exists(envPath))
             {
-                Env.Load(envPath);
+                try { File.Delete(envPath); } catch { } // Bọc try-catch để lỡ file đang bị Windows khóa cũng không làm crash app
             }
-            else
+
+            // --- 2. NẠP NỘI SOI FILE NHÚNG TRỰC TIẾP VÀO RAM ---
+            var assembly = Assembly.GetExecutingAssembly();
+            using (Stream stream = assembly.GetManifestResourceStream("MinecraftLauncher.default.env"))
             {
-                var assembly = Assembly.GetExecutingAssembly();
-                using (Stream stream = assembly.GetManifestResourceStream("MinecraftLauncher.default.env"))
+                if (stream != null)
                 {
-                    if (stream != null)
-                    {
-                        using (StreamReader reader = new StreamReader(stream))
-                        {
-                            string defaultContent = reader.ReadToEnd();
-                            File.WriteAllText(envPath, defaultContent);
-                        }
-                    }
-                    else
-                    {
-                        File.WriteAllText(envPath, "SERVER_API_IP=127.0.0.1\nSERVER_API_PORT=3000");
-                    }
+                    // Nạp thẳng luồng Stream vào biến môi trường của Windows
+                    Env.Load(stream);
                 }
-                Env.Load(envPath);
             }
 
             string serverIP = Env.GetString("SERVER_API_IP");
@@ -136,7 +127,7 @@ namespace MinecraftLauncher
             if (this.FindName("txtRamValue") is TextBlock txtRam) txtRam.Text = $"{_appSettings.AllocatedRam} MB ({_appSettings.AllocatedRam / 1024.0:0.#} GB)";
 
             // 4. Áp dụng Đồ họa lên nút tick
-            if (this.FindName($"radGraphics{_appSettings.GraphicsPreset}") is RadioButton rad) rad.IsChecked = true;
+            // if (this.FindName($"radGraphics{_appSettings.GraphicsPreset}") is RadioButton rad) rad.IsChecked = true;
 
             // Mở khóa cho phép lưu file khi có thao tác mới
             _isSettingsLoaded = true;
@@ -168,15 +159,15 @@ namespace MinecraftLauncher
             }
         }
 
-        private void GraphicsPreset_Checked(object sender, RoutedEventArgs e)
-        {
-            if (!_isSettingsLoaded) return;
-            if (sender is RadioButton rad && rad.Tag != null)
-            {
-                _appSettings.GraphicsPreset = rad.Tag.ToString();
-                SaveLauncherSettings();
-            }
-        }
+        // private void GraphicsPreset_Checked(object sender, RoutedEventArgs e)
+        // {
+        //     if (!_isSettingsLoaded) return;
+        //     if (sender is RadioButton rad && rad.Tag != null)
+        //     {
+        //         _appSettings.GraphicsPreset = rad.Tag.ToString();
+        //         SaveLauncherSettings();
+        //     }
+        // }
 
         private string EnsureMinecraftDirectory(string path)
         {
@@ -413,7 +404,23 @@ namespace MinecraftLauncher
                 _modsWatcher.EnableRaisingEvents = true;
             }
 
-            bool isGameInstalled = File.Exists(jsonFile);
+            // 1. Kiểm tra bản đích (Target) đã cài chưa
+            bool isTargetGameInstalled = File.Exists(jsonFile);
+
+            // 2. CẢM BIẾN: Phát hiện tàn dư của các phiên bản Minecraft đời cũ khác đời bản mới
+            bool hasObsoleteVersion = false;
+            if (Directory.Exists(path.Versions))
+            {
+                var obsoleteDirs = Directory.GetDirectories(path.Versions)
+                    .Where(d => !Path.GetFileName(d).Equals(targetVersion, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (!isTargetGameInstalled && obsoleteDirs.Count > 0)
+                {
+                    hasObsoleteVersion = true;
+                }
+            }
+
             bool areModsInstalled = true;
             var displayList = new List<ModStatusItem>();
 
@@ -424,7 +431,8 @@ namespace MinecraftLauncher
                 foreach (var m in _serverManifest.Mods) displayList.Add(new ModStatusItem { FileName = m, IsInstalled = localFiles.Contains(m) });
             }
 
-            _isInstalled = isGameInstalled && areModsInstalled;
+            // Game chỉ được coi là sẵn sàng nếu cài đúng bản, đủ mod và không vướng bản cũ lỗi thời
+            _isInstalled = isTargetGameInstalled && areModsInstalled && !hasObsoleteVersion;
 
             Dispatcher.Invoke(() =>
             {
@@ -432,12 +440,18 @@ namespace MinecraftLauncher
                 if (btnPlay.Content != null && (btnPlay.Content.ToString() == GetLang("btn_Playing"))) return;
 
                 var label = this.FindName("txtVersionLabel") as TextBlock;
+
                 if (_isInstalled)
                 {
                     btnPlay.Content = GetLang("btn_Play");
                     if (label != null) label.Text = GetLang("lbl_CurrentVersion");
                 }
-                else if (isGameInstalled && !areModsInstalled)
+                else if (hasObsoleteVersion) // <-- KÍCH HOẠT NÚT UPDATE KHI ĐỔI PHIÊN BẢN TRÊN SERVER
+                {
+                    btnPlay.Content = GetLang("btn_Update");
+                    if (label != null) label.Text = _isEnglish ? "Major upgrade required:" : "Yêu cầu nâng cấp phiên bản:";
+                }
+                else if (isTargetGameInstalled && !areModsInstalled)
                 {
                     btnPlay.Content = GetLang("btn_Update");
                     if (label != null) label.Text = GetLang("lbl_VersionToDownload");
@@ -510,22 +524,52 @@ namespace MinecraftLauncher
                 var path = new MinecraftPath(_minecraftDirectory);
                 var launcher = new CMLauncher(path);
 
-                launcher.FileChanged += (fileEvent) =>
-                {
-                    Dispatcher.Invoke(() =>
-                    {
-                        if (this.FindName("txtDownloadStatus") is TextBlock txtStat) txtStat.Text = $"[{fileEvent.FileKind}] {fileEvent.FileName}";
-                        if (this.FindName("txtDownloadDetail") is TextBlock txtDet) txtDet.Text = $"{fileEvent.ProgressedFileCount} / {fileEvent.TotalFileCount}";
-                        if (pBar != null) { pBar.Maximum = fileEvent.TotalFileCount; pBar.Value = fileEvent.ProgressedFileCount; }
-                        double pct = fileEvent.TotalFileCount > 0 ? ((double)fileEvent.ProgressedFileCount / fileEvent.TotalFileCount) * 100 : 0;
-                        if (this.FindName("txtDownloadPercentage") is TextBlock txtPct) txtPct.Text = $"{pct:F0}%";
-                    });
-                };
-
                 string targetVersion = GetTargetVersionName();
 
                 if (!_isInstalled)
                 {
+                    // ====================================================================
+                    // CHIẾN DỊCH "STATELESS WIPE" CHO CLIENT ONLINE-ONLY
+                    // ====================================================================
+                    if (Directory.Exists(path.Versions))
+                    {
+                        var obsoleteDirs = Directory.GetDirectories(path.Versions)
+                            .Where(d => !Path.GetFileName(d).Equals(targetVersion, StringComparison.OrdinalIgnoreCase))
+                            .ToList();
+
+                        if (obsoleteDirs.Count > 0)
+                        {
+                            Dispatcher.Invoke(() => { 
+                                if (this.FindName("txtDownloadStatus") is TextBlock t) 
+                                    t.Text = _isEnglish ? "Cleaning up old client versions..." : "Đang dọn dẹp phân vùng phiên bản cũ..."; 
+                            });
+
+                            // 1. Gỡ bỏ sạch sẽ folder core phiên bản cũ
+                            foreach (var oldDir in obsoleteDirs)
+                            {
+                                try { Directory.Delete(oldDir, true); } catch { }
+                            }
+
+                            // 2. Xóa trắng folder /mods để chuẩn bị đồng bộ mảng mod mới
+                            string modsDir = Path.Combine(path.BasePath, "mods");
+                            if (Directory.Exists(modsDir))
+                            {
+                                try { Directory.Delete(modsDir, true); } catch { }
+                            }
+                            Directory.CreateDirectory(modsDir);
+
+                            // 3. Tiêu diệt folder /saves (Xóa vĩnh viễn tàn dư thế giới Singleplayer)
+                            string savesDir = Path.Combine(path.BasePath, "saves");
+                            if (Directory.Exists(savesDir))
+                            {
+                                try { Directory.Delete(savesDir, true); } catch { }
+                            }
+
+                            await Task.Delay(800); // Chờ ổ cứng giải phóng luồng
+                        }
+                    }
+                    // ====================================================================
+
                     if (targetVersion.StartsWith("fabric-loader"))
                     {
                         string versionDir = Path.Combine(path.Versions, targetVersion);
@@ -552,6 +596,18 @@ namespace MinecraftLauncher
                     Dispatcher.Invoke(() => { btnPlay.Content = GetLang("btn_Checking"); if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = GetLang("msg_CheckUpdate"); });
                 }
 
+                launcher.FileChanged += (fileEvent) =>
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        if (this.FindName("txtDownloadStatus") is TextBlock txtStat) txtStat.Text = $"[{fileEvent.FileKind}] {fileEvent.FileName}";
+                        if (this.FindName("txtDownloadDetail") is TextBlock txtDet) txtDet.Text = $"{fileEvent.ProgressedFileCount} / {fileEvent.TotalFileCount}";
+                        if (pBar != null) { pBar.Maximum = fileEvent.TotalFileCount; pBar.Value = fileEvent.ProgressedFileCount; }
+                        double pct = fileEvent.TotalFileCount > 0 ? ((double)fileEvent.ProgressedFileCount / fileEvent.TotalFileCount) * 100 : 0;
+                        if (this.FindName("txtDownloadPercentage") is TextBlock txtPct) txtPct.Text = $"{pct:F0}%";
+                    });
+                };
+
                 bool isFullScreen = false;
                 string optionsFile = Path.Combine(path.BasePath, "options.txt");
                 if (File.Exists(optionsFile))
@@ -566,8 +622,8 @@ namespace MinecraftLauncher
 
                 var launchOption = new MLaunchOption
                 {
-                    Session = MSession.GetOfflineSession(_username),
-                    MaximumRamMb = _appSettings.AllocatedRam, // Sử dụng RAM từ JSON
+                    Session = MSession.CreateOfflineSession(_username),
+                    MaximumRamMb = _appSettings.AllocatedRam, 
                     ServerIp = string.IsNullOrEmpty(_serverManifest.Server_Ip) ? "127.0.0.1" : _serverManifest.Server_Ip,
                     ServerPort = _serverManifest.Server_Port > 0 ? _serverManifest.Server_Port : 25565
                 };
@@ -589,7 +645,7 @@ namespace MinecraftLauncher
                     if (!Directory.Exists(cslFolder)) Directory.CreateDirectory(cslFolder);
                     File.WriteAllText(Path.Combine(cslFolder, "CustomSkinLoader.json"), @"
                     {
-                      ""version"": ""14.12"",
+                      ""version"": ""15.01"",
                       ""loadlist"": [
                         { ""name"": ""OtonashiRei_LocalServer"", ""type"": ""Legacy"", ""skin"": """ + API_SERVER_URL + @"/skins/{USERNAME}.png"", ""checkPNG"": true },
                         { ""name"": ""Mojang"", ""type"": ""MojangAPI"" }
@@ -1314,8 +1370,8 @@ namespace MinecraftLauncher
     }
     public class LauncherSettings
     {
-        public int AllocatedRam { get; set; } = 4096;
-        public string GraphicsPreset { get; set; } = "Medium";
+        public int AllocatedRam { get; set; } = 8192;
+        // public string GraphicsPreset { get; set; } = "Medium";
         public string Language { get; set; } = "EN";
         public string InstallPath { get; set; } = "";
     }
