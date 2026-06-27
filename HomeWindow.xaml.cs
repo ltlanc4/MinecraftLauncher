@@ -1,12 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -25,7 +21,7 @@ namespace MinecraftLauncher
 {
     public partial class HomeWindow : Window
     {
-        private readonly string CURRENT_VERSION = "1.0.1";
+        private readonly string CURRENT_VERSION = "1.0.2";
         private string _username;
         private static readonly HttpClient _httpClient = new HttpClient();
 
@@ -50,10 +46,18 @@ namespace MinecraftLauncher
         private bool _isEnglish = false;
         private Dictionary<string, string> _langDict = new Dictionary<string, string>();
 
+        // BIẾN ĐỂ NHỚ ID CỦA GAME ĐANG CHẠY
+        private System.Windows.Forms.NotifyIcon _notifyIcon;
+        private int _activeGamePid = -1;
+
+        // Khai báo Win32 API để chữa bệnh "Menu không chịu đóng khi click ra ngoài" của WPF
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+
         public HomeWindow(string username, string token, string uuid)
         {
             InitializeComponent();
-            
+
             _appDataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MinecraftLauncher");
             if (!Directory.Exists(_appDataFolder)) Directory.CreateDirectory(_appDataFolder);
 
@@ -125,12 +129,33 @@ namespace MinecraftLauncher
             // 3. Áp dụng RAM lên thanh trượt
             if (this.FindName("sliderRam") is Slider sld) sld.Value = _appSettings.AllocatedRam;
             if (this.FindName("txtRamValue") is TextBlock txtRam) txtRam.Text = $"{_appSettings.AllocatedRam} MB ({_appSettings.AllocatedRam / 1024.0:0.#} GB)";
+            if (this.FindName($"radCloseMode{_appSettings.CloseMode}") is RadioButton radClose) radClose.IsChecked = true;
 
             // 4. Áp dụng Đồ họa lên nút tick
             // if (this.FindName($"radGraphics{_appSettings.GraphicsPreset}") is RadioButton rad) rad.IsChecked = true;
 
             // Mở khóa cho phép lưu file khi có thao tác mới
             _isSettingsLoaded = true;
+        }
+
+        // ================= CỖ MÁY BĂM MD5 CHO FILE (ĐÃ NÂNG CẤP CHỐNG KHÓA FILE) =================
+        private string GetFileMD5(string filePath)
+        {
+            try
+            {
+                using (var md5 = System.Security.Cryptography.MD5.Create())
+                {
+                    using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    {
+                        var hash = md5.ComputeHash(stream);
+                        return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+                    }
+                }
+            }
+            catch
+            {
+                return "ERR"; // Trả về ERR nếu file bị Windows/tiến trình khác khóa
+            } 
         }
 
         private void SaveLauncherSettings()
@@ -295,6 +320,8 @@ namespace MinecraftLauncher
             await LoadServerInfoFromManifest();
             await LoadUserSkinAsync();
             await CheckForLauncherUpdate();
+            InitializeNotifyIcon();
+            ScanAndHookRunningGame();
         }
 
         private async Task LoadServerInfoFromManifest()
@@ -349,7 +376,10 @@ namespace MinecraftLauncher
                         if (_serverManifest == null || _serverManifest.TotalMods != newManifest.TotalMods) isChanged = true;
                         else if (_serverManifest.Mods != null && newManifest.Mods != null)
                         {
-                            if (newManifest.Mods.Except(_serverManifest.Mods).Any() || _serverManifest.Mods.Except(newManifest.Mods).Any()) isChanged = true;
+                            // Đọ Hash thay vì đọ Tên
+                            var oldHashes = _serverManifest.Mods.Select(m => m.Hash).OrderBy(h => h).ToList();
+                            var newHashes = newManifest.Mods.Select(m => m.Hash).OrderBy(h => h).ToList();
+                            if (!oldHashes.SequenceEqual(newHashes)) isChanged = true;
                         }
 
                         if (isChanged)
@@ -384,15 +414,18 @@ namespace MinecraftLauncher
             string targetVersion = GetTargetVersionName();
             string versionFolder = Path.Combine(path.Versions, targetVersion);
             string jsonFile = Path.Combine(versionFolder, targetVersion + ".json");
-            string modsDir = Path.Combine(path.BasePath, "mods");
+            
+            string modsDir = Path.Combine(path.BasePath, "mods"); 
 
             if (!Directory.Exists(modsDir)) Directory.CreateDirectory(modsDir);
 
             if (_modsWatcher == null || _modsWatcher.Path != modsDir)
             {
                 if (_modsWatcher != null) { _modsWatcher.EnableRaisingEvents = false; _modsWatcher.Dispose(); }
-                _modsWatcher = new FileSystemWatcher(modsDir);
-                _modsWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite;
+                _modsWatcher = new FileSystemWatcher(modsDir)
+                {
+                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite
+                };
 
                 FileSystemEventHandler onModChanged = (s, e) =>
                 {
@@ -404,21 +437,15 @@ namespace MinecraftLauncher
                 _modsWatcher.EnableRaisingEvents = true;
             }
 
-            // 1. Kiểm tra bản đích (Target) đã cài chưa
             bool isTargetGameInstalled = File.Exists(jsonFile);
-
-            // 2. CẢM BIẾN: Phát hiện tàn dư của các phiên bản Minecraft đời cũ khác đời bản mới
             bool hasObsoleteVersion = false;
+            
             if (Directory.Exists(path.Versions))
             {
                 var obsoleteDirs = Directory.GetDirectories(path.Versions)
                     .Where(d => !Path.GetFileName(d).Equals(targetVersion, StringComparison.OrdinalIgnoreCase))
                     .ToList();
-
-                if (!isTargetGameInstalled && obsoleteDirs.Count > 0)
-                {
-                    hasObsoleteVersion = true;
-                }
+                if (!isTargetGameInstalled && obsoleteDirs.Count > 0) hasObsoleteVersion = true;
             }
 
             bool areModsInstalled = true;
@@ -427,11 +454,43 @@ namespace MinecraftLauncher
             if (_serverManifest.Mods != null && _serverManifest.Mods.Count > 0)
             {
                 var localFiles = Directory.GetFiles(modsDir).Select(Path.GetFileName).ToList();
-                if (_serverManifest.Mods.Except(localFiles).Any() || localFiles.Except(_serverManifest.Mods).Any()) areModsInstalled = false;
-                foreach (var m in _serverManifest.Mods) displayList.Add(new ModStatusItem { FileName = m, IsInstalled = localFiles.Contains(m) });
+                var serverModNames = _serverManifest.Mods.Select(m => m.Name).ToList();
+
+                // 1. Cảm biến phát hiện dư file/thiếu file (Kháng lỗi chữ hoa chữ thường)
+                if (serverModNames.Except(localFiles, StringComparer.OrdinalIgnoreCase).Any() || 
+                    localFiles.Except(serverModNames, StringComparer.OrdinalIgnoreCase).Any()) 
+                {
+                    areModsInstalled = false;
+                }
+                
+                // 2. KHÔI PHỤC CẢM BIẾN QUÉT MD5 CHO TỪNG FILE
+                foreach (var serverMod in _serverManifest.Mods) 
+                {
+                    bool isInstalled = false;
+
+                    // Tìm xem dưới máy khách có file nào trùng tên không (bỏ qua hoa/thường)
+                    string localFileName = localFiles.FirstOrDefault(f => string.Equals(f, serverMod.Name, StringComparison.OrdinalIgnoreCase));
+                    
+                    if (!string.IsNullOrEmpty(localFileName))
+                    {
+                        string localFilePath = Path.Combine(modsDir, localFileName);
+                        string localHash = GetFileMD5(localFilePath); // Đọc ruột file
+                        string serverHash = serverMod.Hash?.Trim()?.ToLowerInvariant() ?? "";
+
+                        // CHỈ CÔNG NHẬN KHI MÃ MD5 CỦA MÁY KHÁCH VÀ SERVER HOÀN TOÀN TRÙNG KHỚP
+                        if (!string.IsNullOrEmpty(localHash) && localHash != "err" && localHash == serverHash)
+                        {
+                            isInstalled = true;
+                        }
+                    }
+
+                    // Nếu có 1 file sai Hash -> Ngay lập tức đánh dấu bộ Mod bị lỗi
+                    if (!isInstalled) areModsInstalled = false;
+
+                    displayList.Add(new ModStatusItem { FileName = serverMod.Name, IsInstalled = isInstalled });
+                }
             }
 
-            // Game chỉ được coi là sẵn sàng nếu cài đúng bản, đủ mod và không vướng bản cũ lỗi thời
             _isInstalled = isTargetGameInstalled && areModsInstalled && !hasObsoleteVersion;
 
             Dispatcher.Invoke(() =>
@@ -446,7 +505,7 @@ namespace MinecraftLauncher
                     btnPlay.Content = GetLang("btn_Play");
                     if (label != null) label.Text = GetLang("lbl_CurrentVersion");
                 }
-                else if (hasObsoleteVersion) // <-- KÍCH HOẠT NÚT UPDATE KHI ĐỔI PHIÊN BẢN TRÊN SERVER
+                else if (hasObsoleteVersion) 
                 {
                     btnPlay.Content = GetLang("btn_Update");
                     if (label != null) label.Text = _isEnglish ? "Major upgrade required:" : "Yêu cầu nâng cấp phiên bản:";
@@ -470,33 +529,79 @@ namespace MinecraftLauncher
             if (!Directory.Exists(modsDirectory)) Directory.CreateDirectory(modsDirectory);
 
             var localFiles = Directory.GetFiles(modsDirectory).Select(Path.GetFileName).ToList();
-            var serverFiles = _serverManifest.Mods;
+            var serverMods = _serverManifest.Mods;
+            var modsToDownload = new List<string>();
 
-            var filesToDelete = localFiles.Except(serverFiles).ToList();
-            foreach (var file in filesToDelete) { try { File.Delete(Path.Combine(modsDirectory, file)); } catch { } }
+            // ==========================================================
+            // BƯỚC 1: QUÉT SÂU - VỪA DỌN FILE RÁC, VỪA LỌC HASH MD5
+            // ==========================================================
+            foreach (var localFile in localFiles)
+            {
+                var serverMod = serverMods.FirstOrDefault(m => string.Equals(m.Name, localFile, StringComparison.OrdinalIgnoreCase));
+                string fullPath = Path.Combine(modsDirectory, localFile);
 
-            var filesToDownload = serverFiles.Except(localFiles).ToList();
-            if (filesToDownload.Count > 0)
+                if (serverMod == null)
+                {
+                    // Nếu Server không có file này -> Đây là file rác -> Xóa
+                    try { File.Delete(fullPath); } catch { }
+                }
+                else
+                {
+                    // Nếu trùng tên -> Đưa vào máy quét X-Quang MD5
+                    string localHash = GetFileMD5(fullPath);
+                    string serverHash = serverMod.Hash?.Trim()?.ToLowerInvariant() ?? "";
+
+                    // Nếu mã Hash lệch nhau (nghĩa là ruột file đã bị thay đổi)
+                    if (!string.IsNullOrEmpty(localHash) && localHash != "err" && localHash != serverHash)
+                    {
+                        // Xóa cặn bã file cũ đi và ghi tên nó vào sổ chờ tải lại
+                        try { File.Delete(fullPath); } catch { }
+                        modsToDownload.Add(serverMod.Name);
+                    }
+                }
+            }
+
+            // ==========================================================
+            // BƯỚC 2: RÀ SOÁT - TÌM NHỮNG FILE HOÀN TOÀN CHƯA CÓ TRONG MÁY
+            // ==========================================================
+            // Cập nhật lại danh sách file trong máy sau khi đã dọn dẹp ở Bước 1
+            var validLocalFiles = Directory.GetFiles(modsDirectory).Select(Path.GetFileName).ToList();
+            var serverModNames = serverMods.Select(m => m.Name).ToList();
+
+            var missingFiles = serverModNames.Except(validLocalFiles, StringComparer.OrdinalIgnoreCase).ToList();
+            foreach (var missing in missingFiles)
+            {
+                if (!modsToDownload.Contains(missing))
+                {
+                    modsToDownload.Add(missing);
+                }
+            }
+
+            // ==========================================================
+            // BƯỚC 3: TIẾN HÀNH TẢI CHÍNH XÁC NHỮNG FILE BỊ THIẾU / HỎNG
+            // ==========================================================
+            if (modsToDownload.Count > 0)
             {
                 var pBar = this.FindName("pbDownload") as ProgressBar;
-                Dispatcher.Invoke(() => { if (pBar != null) { pBar.Maximum = filesToDownload.Count; pBar.Value = 0; } });
+                Dispatcher.Invoke(() => { if (pBar != null) { pBar.Maximum = modsToDownload.Count; pBar.Value = 0; } });
 
-                for (int i = 0; i < filesToDownload.Count; i++)
+                for (int i = 0; i < modsToDownload.Count; i++)
                 {
-                    string modFile = filesToDownload[i];
+                    string modFile = modsToDownload[i];
                     Dispatcher.Invoke(() =>
                     {
-                        if (this.FindName("txtDownloadStatus") is TextBlock txtStat) txtStat.Text = string.Format(GetLang("msg_DownloadingMod"), modFile);
-                        if (this.FindName("txtDownloadDetail") is TextBlock txtDet) txtDet.Text = string.Format(GetLang("msg_FileCount"), i, filesToDownload.Count);
-                        if (this.FindName("txtDownloadPercentage") is TextBlock txtPct) txtPct.Text = $"{((double)i / filesToDownload.Count * 100):F0}%";
+                        if (FindName("txtDownloadStatus") is TextBlock txtStat) txtStat.Text = string.Format(GetLang("msg_DownloadingMod"), modFile);
+                        if (FindName("txtDownloadDetail") is TextBlock txtDet) txtDet.Text = $"{i + 1} / {modsToDownload.Count}";
+                        if (FindName("txtDownloadPercentage") is TextBlock txtPct) txtPct.Text = $"{(double)(i + 1) / modsToDownload.Count * 100:F0}%";
                     });
 
                     try
                     {
-                        byte[] fileBytes = await _httpClient.GetByteArrayAsync($"{API_SERVER_URL}/mods/{modFile}");
+                        // Kẹp thêm Time Ticks để đâm thủng lớp Cache bảo vệ của Cloudflare/VPS
+                        byte[] fileBytes = await _httpClient.GetByteArrayAsync($"{API_SERVER_URL}/mods/{modFile}?t={DateTime.Now.Ticks}");
                         await File.WriteAllBytesAsync(Path.Combine(modsDirectory, modFile), fileBytes);
                     }
-                    catch (Exception) { }
+                    catch { }
 
                     Dispatcher.Invoke(() => { if (pBar != null) pBar.Value = i + 1; });
                 }
@@ -534,7 +639,9 @@ namespace MinecraftLauncher
                     if (Directory.Exists(path.Versions))
                     {
                         var obsoleteDirs = Directory.GetDirectories(path.Versions)
-                            .Where(d => !Path.GetFileName(d).Equals(targetVersion, StringComparison.OrdinalIgnoreCase))
+                            // BỎ QUA thư mục đích (Fabric) VÀ BỎ QUA thư mục Vanilla gốc
+                            .Where(d => !Path.GetFileName(d).Equals(targetVersion, StringComparison.OrdinalIgnoreCase) && 
+                                        !Path.GetFileName(d).Equals(_serverManifest.Version, StringComparison.OrdinalIgnoreCase))
                             .ToList();
 
                         if (obsoleteDirs.Count > 0)
@@ -544,28 +651,23 @@ namespace MinecraftLauncher
                                     t.Text = _isEnglish ? "Cleaning up old client versions..." : "Đang dọn dẹp phân vùng phiên bản cũ..."; 
                             });
 
-                            // 1. Gỡ bỏ sạch sẽ folder core phiên bản cũ
+                            // 1. Chỉ gỡ bỏ folder core phiên bản cũ
                             foreach (var oldDir in obsoleteDirs)
                             {
                                 try { Directory.Delete(oldDir, true); } catch { }
                             }
 
-                            // 2. Xóa trắng folder /mods để chuẩn bị đồng bộ mảng mod mới
-                            string modsDir = Path.Combine(path.BasePath, "mods");
-                            if (Directory.Exists(modsDir))
-                            {
-                                try { Directory.Delete(modsDir, true); } catch { }
-                            }
-                            Directory.CreateDirectory(modsDir);
+                            // TUYỆT ĐỐI KHÔNG XÓA THƯ MỤC /mods Ở ĐÂY NỮA! 
+                            // Việc xóa mod cũ sẽ giao cho hàm SyncModsAsync đảm nhận.
 
-                            // 3. Tiêu diệt folder /saves (Xóa vĩnh viễn tàn dư thế giới Singleplayer)
+                            // 2. Tiêu diệt folder /saves (Xóa vĩnh viễn tàn dư thế giới Singleplayer)
                             string savesDir = Path.Combine(path.BasePath, "saves");
                             if (Directory.Exists(savesDir))
                             {
                                 try { Directory.Delete(savesDir, true); } catch { }
                             }
 
-                            await Task.Delay(800); // Chờ ổ cứng giải phóng luồng
+                            await Task.Delay(800); 
                         }
                     }
                     // ====================================================================
@@ -623,7 +725,25 @@ namespace MinecraftLauncher
                 var launchOption = new MLaunchOption
                 {
                     Session = MSession.CreateOfflineSession(_username),
-                    MaximumRamMb = _appSettings.AllocatedRam, 
+
+                    // Khai báo chuẩn của CmlLib
+                    MaximumRamMb = _appSettings.AllocatedRam,
+                    MinimumRamMb = _appSettings.AllocatedRam, // Ép Min = Max để tránh Windows co giãn Heap gây khựng game
+
+                    // TUYỆT CHIÊU "KHÓA ĐUÔI": Ghì chết tham số JVM ở cuối chuỗi lệnh
+                    JVMArguments = new string[]
+                    {
+                        $"-Xms{_appSettings.AllocatedRam}m",
+                        $"-Xmx{_appSettings.AllocatedRam}m",
+                        "-XX:+UseG1GC", // Kích hoạt bộ dọn rác G1GC xịn nhất cho Minecraft
+                        "-Dsun.rmi.dgc.server.gcInterval=2147483646", // Chống rớt TPS đột ngột
+                        "-XX:+UnlockExperimentalVMOptions",
+                        "-XX:G1NewSizePercent=20",
+                        "-XX:G1ReservePercent=20",
+                        "-XX:MaxGCPauseMillis=50",
+                        "-XX:G1HeapRegionSize=32M"
+                    },
+
                     ServerIp = string.IsNullOrEmpty(_serverManifest.Server_Ip) ? "127.0.0.1" : _serverManifest.Server_Ip,
                     ServerPort = _serverManifest.Server_Port > 0 ? _serverManifest.Server_Port : 25565
                 };
@@ -665,6 +785,7 @@ namespace MinecraftLauncher
                 };
 
                 process.Start();
+                HookGameProcess(process);
 
                 Dispatcher.Invoke(() =>
                 {
@@ -675,7 +796,6 @@ namespace MinecraftLauncher
                     btnPlay.Content = GetLang("btn_Playing");
                     btnPlay.IsEnabled = false;
                     NotificationManager.Show(GetLang("msg_InGame"), GetLang("msg_Connecting"));
-                    this.WindowState = WindowState.Minimized;
                 });
             }
             catch (Exception ex)
@@ -746,7 +866,7 @@ namespace MinecraftLauncher
                         if (this.FindName("txtDownloadStatus") is TextBlock txtStat) txtStat.Text = $"[Phục hồi] {fileEvent.FileName}";
                         if (this.FindName("txtDownloadDetail") is TextBlock txtDet) txtDet.Text = $"{fileEvent.ProgressedFileCount} / {fileEvent.TotalFileCount}";
                         if (pBar != null) { pBar.Maximum = fileEvent.TotalFileCount; pBar.Value = fileEvent.ProgressedFileCount; }
-                        
+
                         double pct = fileEvent.TotalFileCount > 0 ? ((double)fileEvent.ProgressedFileCount / fileEvent.TotalFileCount) * 100 : 0;
                         if (this.FindName("txtDownloadPercentage") is TextBlock txtPct) txtPct.Text = $"{pct:F0}%";
                     });
@@ -777,8 +897,8 @@ namespace MinecraftLauncher
                 Dispatcher.Invoke(() =>
                 {
                     CheckInstallationStatus();
-                    NotificationManager.Show(_isEnglish ? "SUCCESS" : "THÀNH CÔNG", 
-                        _isEnglish ? "All core game files and mods have been verified and restored!" 
+                    NotificationManager.Show(_isEnglish ? "SUCCESS" : "THÀNH CÔNG",
+                        _isEnglish ? "All core game files and mods have been verified and restored!"
                                    : "Toàn bộ file game gốc và Mods đã được kiểm tra và phục hồi nguyên vẹn!");
                 });
             }
@@ -1268,32 +1388,40 @@ namespace MinecraftLauncher
 
         private bool IsServerVersionNewer(string serverVer, string clientVer)
         {
-            if (string.IsNullOrEmpty(serverVer) || string.IsNullOrEmpty(clientVer)) return false;
+            if (string.IsNullOrWhiteSpace(serverVer) || string.IsNullOrWhiteSpace(clientVer)) return false;
 
             serverVer = serverVer.TrimStart('v', 'V').Trim();
             clientVer = clientVer.TrimStart('v', 'V').Trim();
 
-            if (serverVer == clientVer) return false;
+            if (string.Equals(serverVer, clientVer, StringComparison.OrdinalIgnoreCase)) return false;
 
-            string[] sParts = serverVer.Split('-');
-            string[] cParts = clientVer.Split('-');
+            // Tách con số lõi và hậu tố (VD: "1.0.0-hotfix" -> Lõi: "1.0.0", Hậu tố: "hotfix")
+            string[] sParts = serverVer.Split(new char[] { '-' }, 2);
+            string[] cParts = clientVer.Split(new char[] { '-' }, 2);
 
-            if (Version.TryParse(sParts[0], out Version sVersion) && Version.TryParse(cParts[0], out Version cVersion))
+            if (Version.TryParse(sParts[0], out Version sVer) && Version.TryParse(cParts[0], out Version cVer))
             {
-                if (sVersion > cVersion) return true;
-                if (sVersion < cVersion) return false;
+                // THỦ THUẬT KHỬ "-1": Ép toàn bộ các mốc trống về số 0 thuần túy (VD: 1.0 -> 1.0.0.0)
+                var sNorm = new Version(sVer.Major, sVer.Minor, Math.Max(0, sVer.Build), Math.Max(0, sVer.Revision));
+                var cNorm = new Version(cVer.Major, cVer.Minor, Math.Max(0, cVer.Build), Math.Max(0, cVer.Revision));
 
-                if (sVersion == cVersion)
-                {
-                    if (sParts.Length == 1 && cParts.Length > 1) return false;
-                    if (sParts.Length > 1 && cParts.Length == 1) return true;
+                if (sNorm > cNorm) return true;  // Ví dụ: 1.0.1 > 1.0.0-hotfix -> Bật Update
+                if (sNorm < cNorm) return false; // Ví dụ: 1.0.0 < 1.0.1 -> Không Update
 
-                    if (sParts.Length > 1 && cParts.Length > 1)
-                    {
-                        return string.Compare(sParts[1], cParts[1], StringComparison.OrdinalIgnoreCase) > 0;
-                    }
-                }
+                // NẾU SỐ LÕI BẰNG NHAU (VD: cùng là mốc 1.0.0) -> So sánh hậu tố chữ phía sau
+                string sSuffix = sParts.Length > 1 ? sParts[1] : "";
+                string cSuffix = cParts.Length > 1 ? cParts[1] : "";
+
+                // Bản Client chưa có hotfix, Server đã up bản hotfix -> Bật Update
+                if (sSuffix != "" && cSuffix == "") return true;
+
+                // Bản Client đang chạy hotfix, Server lại trả về bản gốc -> Không Update
+                if (sSuffix == "" && cSuffix != "") return false;
+
+                // Cùng là hotfix (VD: hotfix1 vs hotfix2) -> So sánh chuỗi tự nhiên
+                return string.Compare(sSuffix, cSuffix, StringComparison.OrdinalIgnoreCase) > 0;
             }
+
             return serverVer != clientVer;
         }
 
@@ -1317,15 +1445,53 @@ namespace MinecraftLauncher
         private void TopBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) { this.DragMove(); }
         private void MinimizeButton_Click(object sender, RoutedEventArgs e) { this.WindowState = WindowState.Minimized; }
 
+        // ================= HÀM XỬ LÝ TẮT HOÀN TOÀN (CÓ CẢNH BÁO) =================
+        private void ExitApplication()
+        {
+            // CẢM BIẾN: Kiểm tra xem Game có đang chạy không
+            if (_activeGamePid != -1)
+            {
+                string title = _isEnglish ? "CONFIRM EXIT" : "XÁC NHẬN THOÁT";
+                string desc = _isEnglish 
+                    ? "Minecraft is currently running. Closing the launcher will also kill the game. Are you sure?" 
+                    : "Minecraft đang chạy ngầm. Tắt Launcher lúc này sẽ văng luôn cả trò chơi! Bạn có chắc chắn muốn thoát?";
+                string btnOk = _isEnglish ? "EXIT" : "VẪN THOÁT";
+                string btnCancel = _isEnglish ? "CANCEL" : "HỦY BỎ";
+
+                // Bung bảng hỏi xác nhận
+                bool confirm = NotificationManager.ShowConfirm(title, desc, btnOk, btnCancel);
+                
+                // Nếu người dùng bấm Hủy -> Trả lại Launcher, không tắt nữa
+                if (!confirm) return; 
+                
+                // Nếu đồng ý thoát -> Bắn bỏ tiến trình Game
+                try { Process.GetProcessById(_activeGamePid)?.Kill(); } catch { }
+            }
+
+            // Dọn dẹp tài nguyên và Tắt ứng dụng
+            _autoSyncTimer?.Stop();
+            if (_notifyIcon != null) _notifyIcon.Dispose();
+            Application.Current.Shutdown();
+        }
+
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            _autoSyncTimer?.Stop();
-            Application.Current.Shutdown();
+            if (_appSettings.CloseMode == 2)
+            {
+                // LỰA CHỌN 2: Ẩn Launcher xuống khay hệ thống (Tray)
+                HideToTray();
+            }
+            else
+            {
+                // LỰA CHỌN 1: Kích hoạt quy trình tắt hoàn toàn
+                ExitApplication();
+            }
         }
 
         private void LogoutButton_Click(object sender, RoutedEventArgs e)
         {
             _autoSyncTimer?.Stop();
+            if (_notifyIcon != null) _notifyIcon.Dispose();
 
             if (File.Exists(SESSION_FILE)) File.Delete(SESSION_FILE);
 
@@ -1342,8 +1508,145 @@ namespace MinecraftLauncher
             };
             this.BeginAnimation(Window.OpacityProperty, fadeOutHome);
         }
-    }
 
+        // ================= HỆ THỐNG SYSTEM TRAY & HOOK GAME =================
+        private void InitializeNotifyIcon()
+        {
+            _notifyIcon = new System.Windows.Forms.NotifyIcon();
+            _notifyIcon.Text = "OtonashiRei MC Server";
+
+            try {
+                string exePath = Process.GetCurrentProcess().MainModule?.FileName ?? "";
+                if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
+                    _notifyIcon.Icon = System.Drawing.Icon.ExtractAssociatedIcon(exePath);
+            } catch { }
+
+            if (_notifyIcon.Icon == null && Uri.TryCreate("pack://application:,,,/Assets/icon.ico", UriKind.Absolute, out Uri iconUri))
+            {
+                try {
+                    var stream = Application.GetResourceStream(iconUri)?.Stream;
+                    if (stream != null) _notifyIcon.Icon = new System.Drawing.Icon(stream);
+                } catch { }
+            }
+            if (_notifyIcon.Icon == null) _notifyIcon.Icon = System.Drawing.SystemIcons.Application;
+
+            // XỬ LÝ SỰ KIỆN CHUỘT LÊN ICON KHAY HỆ THỐNG
+            _notifyIcon.MouseUp += (s, e) =>
+            {
+                if (e.Button == System.Windows.Forms.MouseButtons.Left)
+                {
+                    // Click trái: Hiện lại Launcher
+                    RestoreFromTray();
+                }
+                else if (e.Button == System.Windows.Forms.MouseButtons.Right)
+                {
+                    // Click phải: Gọi cái ContextMenu tuyệt đẹp từ XAML ra
+                    ContextMenu trayMenu = (ContextMenu)this.FindResource("TrayContextMenu");
+                    trayMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.MousePoint;
+                    trayMenu.IsOpen = true;
+
+                    // Ép Windows focus vào Menu này để khi click ra ngoài màn hình nó sẽ tự đóng
+                    var hwndSource = PresentationSource.FromVisual(trayMenu) as System.Windows.Interop.HwndSource;
+                    if (hwndSource != null) SetForegroundWindow(hwndSource.Handle);
+                }
+            };
+        }
+
+        private void HideToTray(bool showNotification = true)
+        {
+            if (_notifyIcon == null) InitializeNotifyIcon();
+            _notifyIcon.Visible = true;
+            this.Hide(); // Ẩn hoàn toàn khỏi Taskbar chính
+            
+            // Chỉ bung thông báo nếu công tắc được bật
+            if (showNotification)
+            {
+                NotificationManager.Show("LAUNCHER CHẠY NGẦM", "Launcher đã được thu nhỏ xuống khay hệ thống!");
+            }
+        }
+
+        public void RestoreFromTray()
+        {
+            this.Show();
+            this.WindowState = WindowState.Normal;
+            this.Activate();
+            if (_notifyIcon != null) _notifyIcon.Visible = false;
+        }
+
+        private void HookGameProcess(Process proc)
+        {
+            _activeGamePid = proc.Id;
+            proc.EnableRaisingEvents = true;
+
+            // Khi game tắt -> Tự động khôi phục lại Launcher từ khay hệ thống
+            proc.Exited += (s, ev) =>
+            {
+                _activeGamePid = -1;
+                Dispatcher.Invoke(() => {
+                    btnPlay.IsEnabled = true;
+                    btnPlay.Content = GetLang("btn_Checking");
+                    CheckInstallationStatus();
+                    RestoreFromTray(); 
+                });
+            };
+
+            Dispatcher.Invoke(() => {
+                btnPlay.IsEnabled = false;
+                btnPlay.Content = GetLang("btn_Playing");
+                
+                // GỠ BỎ ĐIỀU KIỆN IF: Luôn luôn ép Launcher ẩn xuống khay khi vào game
+                // Truyền 'false' để không bị chèn ép thông báo "VÀO GAME"
+                HideToTray(false); 
+            });
+        }
+
+        private void ScanAndHookRunningGame()
+        {
+            try {
+                var candidates = Process.GetProcessesByName("javaw").Concat(Process.GetProcessesByName("java"));
+                string normMcDir = Path.GetFullPath(_minecraftDirectory).TrimEnd('\\', '/');
+
+                foreach (var proc in candidates) {
+                    bool isOurGame = false;
+                    try {
+                        if (proc.MainModule != null && Path.GetFullPath(proc.MainModule.FileName).StartsWith(normMcDir, StringComparison.OrdinalIgnoreCase))
+                            isOurGame = true;
+                    } catch { }
+
+                    if (!isOurGame && !string.IsNullOrEmpty(proc.MainWindowTitle) && proc.MainWindowTitle.Contains("Minecraft", StringComparison.OrdinalIgnoreCase))
+                        isOurGame = true;
+
+                    if (isOurGame) { HookGameProcess(proc); break; }
+                }
+            } catch { }
+        }
+
+        private void CloseOption_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!_isSettingsLoaded) return;
+            if (sender is RadioButton rad && int.TryParse(rad.Tag?.ToString(), out int mode))
+            {
+                _appSettings.CloseMode = mode;
+                SaveLauncherSettings();
+            }
+        }
+
+        // ================= 2 HÀM SỰ KIỆN CỦA TRAY MENU XAML =================
+        private void TrayMenuRestore_Click(object sender, RoutedEventArgs e)
+        {
+            RestoreFromTray();
+        }
+
+        private void TrayMenuExit_Click(object sender, RoutedEventArgs e)
+        {
+            ExitApplication();
+        }
+    }
+    public class ModFileInfo
+    {
+        public string Name { get; set; }
+        public string Hash { get; set; }
+    }
     public class ServerInfoResponse
     {
         public bool Success { get; set; }
@@ -1354,7 +1657,7 @@ namespace MinecraftLauncher
         public string? Server_Ip { get; set; }
         public int Server_Port { get; set; }
         public int TotalMods { get; set; }
-        public List<string>? Mods { get; set; }
+        public List<ModFileInfo>? Mods { get; set; } 
     }
     public class ModStatusItem
     {
@@ -1371,8 +1674,10 @@ namespace MinecraftLauncher
     public class LauncherSettings
     {
         public int AllocatedRam { get; set; } = 8192;
-        // public string GraphicsPreset { get; set; } = "Medium";
         public string Language { get; set; } = "EN";
         public string InstallPath { get; set; } = "";
+
+        // THÊM DÒNG NÀY (1 = Tắt Launcher + Tắt Game | 2 = Ẩn xuống Tray)
+        public int CloseMode { get; set; } = 2; 
     }
 }
