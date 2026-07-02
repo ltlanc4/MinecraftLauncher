@@ -1,10 +1,5 @@
 obj
 bin
-session_data.json
-session-data.json
-launcher_path.txt
 Release
-lang.txt
 .env
-ram_config.txt
 default.env

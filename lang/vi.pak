@@ -17,7 +17,6 @@
   "lblChangeSkinTitle": "THAY ĐỔI SKIN (DIỆN MẠO)",
   "lblSkinFormat": "Định dạng hỗ trợ: PNG (64x64 hoặc 64x32)",
   "btnSelectSkin": "CHỌN FILE...",
-  "lblSkinNote": "Cần cài đặt mod CustomSkinLoader hoặc SkinRestorer để hiển thị trong game.",
   "lblLinkEmailTitle": "LIÊN KẾT EMAIL MỚI",
   "lblNewEmailStr": "Địa chỉ Email mới",
   "btnCancelEmailOtp": "HỦY BỎ",
@@ -145,5 +144,18 @@
   "msg_VerifySuccess": "Đã đặt lại trạng thái! Lần tới bấm KHỞI ĐỘNG, hệ thống sẽ quét và tải lại các tệp bị lỗi/thiếu.",
   "msg_UninstallConfirm": "Bạn có chắc chắn muốn xóa toàn bộ dữ liệu game không? Thao tác này sẽ xóa sạch Mods và Cài đặt.",
   "msg_UninstallSuccess": "Đã gỡ cài đặt game thành công!",
-  "lbl_RamStr": "Dung lượng RAM (JVM)"
+  "lbl_RamStr": "Dung lượng RAM (JVM)",
+  "lblCloseActionStr": "Hành vi khi bấm nút Đóng (X)",
+  "radCloseMode1": "Thoát Launcher và trò chơi",
+  "radCloseMode2": "Thu nhỏ xuống khay hệ thống (Tray)",
+  "menuTrayRestore": "Hiện lại Launcher",
+  "menuTrayExit": "Thoát Launcher",
+  "msg_TrayNotifyTitle": "LAUNCHER CHẠY NGẦM",
+  "msg_TrayNotifyDesc": "Launcher đã được thu nhỏ xuống khay hệ thống!",
+  "msg_ConfirmExitTitle": "XÁC NHẬN THOÁT",
+  "msg_ConfirmExitDesc": "Minecraft đang chạy. Thoát Launcher lúc này sẽ thoát luôn cả trò chơi! Bạn có chắc chắn muốn thoát?",
+  "msg_RestartRequiredTitle": "YÊU CẦU KHỞI ĐỘNG LẠI",
+  "msg_RestartRequiredDesc": "Launcher cần khởi động lại để áp dụng ngôn ngữ mới. Bạn có muốn khởi động lại ngay bây giờ không?",
+  "btn_Confirm": "XÁC NHẬN",
+  "btn_Cancel": "HUỶ BỎ"
 }

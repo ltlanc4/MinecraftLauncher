@@ -21,7 +21,7 @@ namespace MinecraftLauncher
 {
     public partial class HomeWindow : Window
     {
-        private readonly string CURRENT_VERSION = "1.0.2";
+        private readonly string CURRENT_VERSION = "1.0.2-hotfix";
         private string _username;
         private static readonly HttpClient _httpClient = new HttpClient();
 
@@ -260,40 +260,33 @@ namespace MinecraftLauncher
             }
             catch { }
 
+            // 1. TỰ ĐỘNG QUÉT VÀ GÁN TOÀN BỘ CHỮ: 
+            // Chỉ cần tên x:Name trong XAML trùng với Key trong file .pak là chữ tự động vào đúng chỗ!
             foreach (var kvp in _langDict)
             {
-                if (kvp.Key.StartsWith("msg_") || kvp.Key.StartsWith("btn_") || kvp.Key.StartsWith("lbl_")) continue;
                 var element = this.FindName(kvp.Key);
                 if (element is TextBlock tb) tb.Text = kvp.Value;
                 else if (element is Button btn) btn.Content = kvp.Value;
                 else if (element is RadioButton rad) rad.Content = kvp.Value;
+                else if (element is MenuItem mnu) mnu.Header = kvp.Value;
             }
 
+            // 2. NHỮNG THÀNH PHẦN ĐẶC BIỆT KHÔNG THỂ GÁN TỰ ĐỘNG:
             if (this.FindName("btnSettings") is Button btnSet) btnSet.ToolTip = GetLang("btnSettingsTooltip");
-            var btnUpSkin = this.FindName("btnUploadSkin") as Button;
-            if (btnUpSkin != null && btnUpSkin.IsEnabled) btnUpSkin.Content = GetLang("btn_Upload");
 
-            var btnSendEm = this.FindName("btnSendEmailOtp") as Button;
-            if (btnSendEm != null && btnSendEm.IsEnabled) btnSendEm.Content = GetLang("btn_ChangeEmail");
+            // ContextMenu của Tray Icon nằm trong Window.Resources nên lệnh FindName() không chui vào quét được, ta phải quét thủ công nó:
+            if (this.FindResource("TrayContextMenu") is ContextMenu trayMenu)
+            {
+                foreach (var item in trayMenu.Items)
+                {
+                    if (item is MenuItem menuItem && !string.IsNullOrEmpty(menuItem.Name) && _langDict.ContainsKey(menuItem.Name))
+                    {
+                        menuItem.Header = _langDict[menuItem.Name];
+                    }
+                }
+            }
 
-            var btnSendPw = this.FindName("btnSendPasswordOtp") as Button;
-            if (btnSendPw != null && btnSendPw.IsEnabled) btnSendPw.Content = GetLang("btn_ChangePassword");
-
-            if (this.FindName("lblEmailOtpStr") is TextBlock lblEmOtp) lblEmOtp.Text = GetLang("lbl_EmailOtpStr");
-            if (this.FindName("lblPassOtpStr") is TextBlock lblPwOtp) lblPwOtp.Text = GetLang("lbl_PassOtpStr");
-            if (this.FindName("lblSettingsSidebarTitle") is TextBlock lblSetSide) lblSetSide.Text = GetLang("lblSettingsSidebarTitle");
-            if (this.FindName("radSubSetGeneral") is RadioButton radGen) radGen.Content = GetLang("radSubSetGeneral");
-            if (this.FindName("radSubSetGraphics") is RadioButton radGra) radGra.Content = GetLang("radSubSetGraphics");
-            if (this.FindName("lblSettingsGeneralTitle") is TextBlock lblGenTitle) lblGenTitle.Text = GetLang("lblSettingsGeneralTitle");
-            if (this.FindName("lblSettingsGraphicsTitle") is TextBlock lblGraTitle) lblGraTitle.Text = GetLang("lblSettingsGraphicsTitle");
-            if (this.FindName("lblShaderStr") is TextBlock lblShader) lblShader.Text = GetLang("lblShaderStr");
-            if (this.FindName("btnAddShader") is Button btnShader) btnShader.Content = GetLang("btn_AddShader");
-            if (this.FindName("btnUpdateClient") is Button btnUpdClient) btnUpdClient.Content = GetLang("btn_UpdateClient");
-            if (this.FindName("menuOpenFolder") is MenuItem mnuOpen) mnuOpen.Header = GetLang("menu_OpenFolder");
-            if (this.FindName("menuVerify") is MenuItem mnuVerify) mnuVerify.Header = GetLang("menu_Verify");
-            if (this.FindName("menuUninstall") is MenuItem mnuUninst) mnuUninst.Header = GetLang("menu_Uninstall");
-            if (this.FindName("lblRamStr") is TextBlock lblRam) lblRam.Text = GetLang("lbl_RamStr");
-
+            // 3. CẬP NHẬT LẠI TRẠNG THÁI HIỂN THỊ
             CheckInstallationStatus();
             UpdateTotalModsText();
         }
@@ -758,20 +751,37 @@ namespace MinecraftLauncher
 
                 Dispatcher.Invoke(() => CheckInstallationStatus());
 
-                Dispatcher.Invoke(() => { if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = GetLang("msg_ConfigSkin"); });
+                Dispatcher.Invoke(() => { 
+                    if (this.FindName("txtDownloadStatus") is TextBlock t) 
+                        t.Text = GetLang("msg_ConfigSkin"); 
+                });
+                
                 try
                 {
                     string cslFolder = Path.Combine(path.BasePath, "CustomSkinLoader");
                     if (!Directory.Exists(cslFolder)) Directory.CreateDirectory(cslFolder);
-                    File.WriteAllText(Path.Combine(cslFolder, "CustomSkinLoader.json"), @"
-                    {
+
+                    // 1. Phá Cache: Xóa sạch ảnh cũ ngâm trong RAM/Ổ cứng của máy trạm
+                    string cslCacheFolder = Path.Combine(cslFolder, "caches");
+                    if (Directory.Exists(cslCacheFolder)) { try { Directory.Delete(cslCacheFolder, true); } catch { } }
+
+                    // 2. Chèn tự động Link API hiện tại, kẹp thêm biến Thời gian (Ticks) để vĩnh viễn không bị lỗi Cache
+                    string cacheBusterUrl = $"http://{Env.GetString("SERVER_API_IP")}:{Env.GetString("SERVER_API_PORT")}/skins/{{USERNAME}}.png?t={DateTime.Now.Ticks}";
+                    
+                    // 3. Viết file JSON bằng String Interpolation của C#
+                    string cslConfig = $@"
+                    {{
                       ""version"": ""15.01"",
                       ""loadlist"": [
-                        { ""name"": ""OtonashiRei_LocalServer"", ""type"": ""Legacy"", ""skin"": """ + API_SERVER_URL + @"/skins/{USERNAME}.png"", ""checkPNG"": true },
-                        { ""name"": ""Mojang"", ""type"": ""MojangAPI"" }
+                        {{ ""name"": ""OtonashiRei_LocalServer"", ""type"": ""Legacy"", ""skin"": ""{cacheBusterUrl}"", ""checkPNG"": true }},
+                        {{ ""name"": ""Mojang"", ""type"": ""MojangAPI"" }}
                       ],
-                      ""enableDynamicSkull"": true, ""enableTransparentSkin"": true, ""ignoreHttpsCertificate"": false
-                    }");
+                      ""enableDynamicSkull"": true, 
+                      ""enableTransparentSkin"": true, 
+                      ""ignoreHttpsCertificate"": true
+                    }}";
+
+                    File.WriteAllText(Path.Combine(cslFolder, "CustomSkinLoader.json"), cslConfig);
                 }
                 catch { }
 
@@ -863,11 +873,11 @@ namespace MinecraftLauncher
                 {
                     Dispatcher.Invoke(() =>
                     {
-                        if (this.FindName("txtDownloadStatus") is TextBlock txtStat) txtStat.Text = $"[Phục hồi] {fileEvent.FileName}";
+                        if (this.FindName("txtDownloadStatus") is TextBlock txtStat) txtStat.Text = _isEnglish ? "[Phục hồi]" : "[Restore]" + fileEvent.FileName;
                         if (this.FindName("txtDownloadDetail") is TextBlock txtDet) txtDet.Text = $"{fileEvent.ProgressedFileCount} / {fileEvent.TotalFileCount}";
                         if (pBar != null) { pBar.Maximum = fileEvent.TotalFileCount; pBar.Value = fileEvent.ProgressedFileCount; }
 
-                        double pct = fileEvent.TotalFileCount > 0 ? ((double)fileEvent.ProgressedFileCount / fileEvent.TotalFileCount) * 100 : 0;
+                        double pct = fileEvent.TotalFileCount > 0 ? (double)fileEvent.ProgressedFileCount / fileEvent.TotalFileCount * 100 : 0;
                         if (this.FindName("txtDownloadPercentage") is TextBlock txtPct) txtPct.Text = $"{pct:F0}%";
                     });
                 };
@@ -1451,12 +1461,11 @@ namespace MinecraftLauncher
             // CẢM BIẾN: Kiểm tra xem Game có đang chạy không
             if (_activeGamePid != -1)
             {
-                string title = _isEnglish ? "CONFIRM EXIT" : "XÁC NHẬN THOÁT";
-                string desc = _isEnglish 
-                    ? "Minecraft is currently running. Closing the launcher will also kill the game. Are you sure?" 
-                    : "Minecraft đang chạy ngầm. Tắt Launcher lúc này sẽ văng luôn cả trò chơi! Bạn có chắc chắn muốn thoát?";
-                string btnOk = _isEnglish ? "EXIT" : "VẪN THOÁT";
-                string btnCancel = _isEnglish ? "CANCEL" : "HỦY BỎ";
+                // Gọi đa ngôn ngữ từ thư viện thay vì set cứng
+                string title = GetLang("msg_ConfirmExitTitle");
+                string desc = GetLang("msg_ConfirmExitDesc");
+                string btnOk = GetLang("btn_Confirm");
+                string btnCancel = GetLang("btn_Cancel");
 
                 // Bung bảng hỏi xác nhận
                 bool confirm = NotificationManager.ShowConfirm(title, desc, btnOk, btnCancel);
@@ -1556,13 +1565,10 @@ namespace MinecraftLauncher
         {
             if (_notifyIcon == null) InitializeNotifyIcon();
             _notifyIcon.Visible = true;
-            this.Hide(); // Ẩn hoàn toàn khỏi Taskbar chính
+            this.Hide(); 
             
-            // Chỉ bung thông báo nếu công tắc được bật
-            if (showNotification)
-            {
-                NotificationManager.Show("LAUNCHER CHẠY NGẦM", "Launcher đã được thu nhỏ xuống khay hệ thống!");
-            }
+            if (showNotification) 
+                NotificationManager.Show(GetLang("msg_TrayNotifyTitle"), GetLang("msg_TrayNotifyDesc"));
         }
 
         public void RestoreFromTray()
