@@ -215,7 +215,7 @@ namespace MinecraftLauncher
         private void ChangePath_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new System.Windows.Forms.FolderBrowserDialog();
-            dialog.Description = GetLang("msg_SelectFolder");
+            dialog.Description = GetLang("msgSelectFolder");
             if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK) SaveMinecraftPath(dialog.SelectedPath);
         }
 
@@ -302,9 +302,9 @@ namespace MinecraftLauncher
             var txtMods = this.FindName("txtTotalMods") as TextBlock;
             if (txtMods == null) return;
 
-            if (_serverManifest == null) txtMods.Text = GetLang("msg_ReadingManifest");
-            else if (_serverManifest.Success) txtMods.Text = string.Format(GetLang("msg_CheckedSync"), _serverManifest.TotalMods);
-            else txtMods.Text = GetLang("msg_CannotLoadMod");
+            if (_serverManifest == null) txtMods.Text = GetLang("msgReadingManifest");
+            else if (_serverManifest.Success) txtMods.Text = string.Format(GetLang("msgCheckedSync"), _serverManifest.TotalMods);
+            else txtMods.Text = GetLang("msgCannotLoadMod");
         }
 
         // ================= TẢI DỮ LIỆU TỪ SERVER =================
@@ -339,14 +339,14 @@ namespace MinecraftLauncher
                         return;
                     }
                 }
-                Dispatcher.Invoke(() => { txtGameVersion.Text = GetLang("msg_OfflineConfig"); UpdateTotalModsText(); });
+                Dispatcher.Invoke(() => { txtGameVersion.Text = GetLang("msgOfflineConfig"); UpdateTotalModsText(); });
             }
             catch (Exception ex)
             {
                 Dispatcher.Invoke(() =>
                 {
-                    txtGameVersion.Text = GetLang("msg_SystemError");
-                    if (this.FindName("txtTotalMods") is TextBlock txtMods) txtMods.Text = string.Format(GetLang("msg_ErrorDetail"), ex.Message);
+                    txtGameVersion.Text = GetLang("msgSystemError");
+                    if (this.FindName("txtTotalMods") is TextBlock txtMods) txtMods.Text = string.Format(GetLang("msgErrorDetail"), ex.Message);
                 });
             }
         }
@@ -489,29 +489,29 @@ namespace MinecraftLauncher
             Dispatcher.Invoke(() =>
             {
                 if (this.FindName("icModsList") is ItemsControl list) list.ItemsSource = displayList;
-                if (btnPlay.Content != null && (btnPlay.Content.ToString() == GetLang("btn_Playing"))) return;
+                if (btnPlay.Content != null && (btnPlay.Content.ToString() == GetLang("btnPlaying"))) return;
 
                 var label = this.FindName("txtVersionLabel") as TextBlock;
 
                 if (_isInstalled)
                 {
-                    btnPlay.Content = GetLang("btn_Play");
-                    if (label != null) label.Text = GetLang("lbl_CurrentVersion");
+                    btnPlay.Content = GetLang("btnPlay");
+                    if (label != null) label.Text = GetLang("lblCurrentVersion");
                 }
                 else if (hasObsoleteVersion) 
                 {
-                    btnPlay.Content = GetLang("btn_Update");
+                    btnPlay.Content = GetLang("btnUpdate");
                     if (label != null) label.Text = _isEnglish ? "Major upgrade required:" : "Yêu cầu nâng cấp phiên bản:";
                 }
                 else if (isTargetGameInstalled && !areModsInstalled)
                 {
-                    btnPlay.Content = GetLang("btn_Update");
-                    if (label != null) label.Text = GetLang("lbl_VersionToDownload");
+                    btnPlay.Content = GetLang("btnUpdate");
+                    if (label != null) label.Text = GetLang("lblVersionToDownload");
                 }
                 else
                 {
-                    btnPlay.Content = GetLang("btn_Install");
-                    if (label != null) label.Text = GetLang("lbl_VersionToDownload");
+                    btnPlay.Content = GetLang("btnInstall");
+                    if (label != null) label.Text = GetLang("lblVersionToDownload");
                 }
             });
         }
@@ -583,7 +583,7 @@ namespace MinecraftLauncher
                     string modFile = modsToDownload[i];
                     Dispatcher.Invoke(() =>
                     {
-                        if (FindName("txtDownloadStatus") is TextBlock txtStat) txtStat.Text = string.Format(GetLang("msg_DownloadingMod"), modFile);
+                        if (FindName("txtDownloadStatus") is TextBlock txtStat) txtStat.Text = string.Format(GetLang("msgDownloadingMod"), modFile);
                         if (FindName("txtDownloadDetail") is TextBlock txtDet) txtDet.Text = $"{i + 1} / {modsToDownload.Count}";
                         if (FindName("txtDownloadPercentage") is TextBlock txtPct) txtPct.Text = $"{(double)(i + 1) / modsToDownload.Count * 100:F0}%";
                     });
@@ -607,7 +607,7 @@ namespace MinecraftLauncher
         {
             if (_serverManifest == null)
             {
-                Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msg_ConnectionError"), GetLang("msg_LoadConfigError")));
+                Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msgConnectionError"), GetLang("msgLoadConfigError")));
                 return;
             }
 
@@ -672,7 +672,7 @@ namespace MinecraftLauncher
 
                         if (!File.Exists(jsonPath))
                         {
-                            Dispatcher.Invoke(() => { if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = GetLang("msg_FetchFabric"); });
+                            Dispatcher.Invoke(() => { if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = GetLang("msgFetchFabric"); });
                             if (!Directory.Exists(versionDir)) Directory.CreateDirectory(versionDir);
 
                             try
@@ -680,15 +680,15 @@ namespace MinecraftLauncher
                                 byte[] jsonBytes = await _httpClient.GetByteArrayAsync($"https://meta.fabricmc.net/v2/versions/loader/{_serverManifest.Version}/{_serverManifest.Loader_Version}/profile/json");
                                 await File.WriteAllBytesAsync(jsonPath, jsonBytes);
                             }
-                            catch (Exception ex) { throw new Exception(GetLang("msg_CannotFetchFabric") + ex.Message); }
+                            catch (Exception ex) { throw new Exception(GetLang("msgCannotFetchFabric") + ex.Message); }
                         }
                     }
 
-                    Dispatcher.Invoke(() => { btnPlay.Content = GetLang("btn_Downloading"); if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = GetLang("msg_InstallCore"); });
+                    Dispatcher.Invoke(() => { btnPlay.Content = GetLang("btnDownloading"); if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = GetLang("msgInstallCore"); });
                 }
                 else
                 {
-                    Dispatcher.Invoke(() => { btnPlay.Content = GetLang("btn_Checking"); if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = GetLang("msg_CheckUpdate"); });
+                    Dispatcher.Invoke(() => { btnPlay.Content = GetLang("btnChecking"); if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = GetLang("msgheckUpdate"); });
                 }
 
                 launcher.FileChanged += (fileEvent) =>
@@ -746,14 +746,14 @@ namespace MinecraftLauncher
 
                 var process = await launcher.CreateProcessAsync(targetVersion, launchOption);
 
-                Dispatcher.Invoke(() => { if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = GetLang("msg_SyncServer"); });
+                Dispatcher.Invoke(() => { if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = GetLang("msgSyncServer"); });
                 await SyncModsAsync(Path.Combine(path.BasePath, "mods"));
 
                 Dispatcher.Invoke(() => CheckInstallationStatus());
 
                 Dispatcher.Invoke(() => { 
                     if (this.FindName("txtDownloadStatus") is TextBlock t) 
-                        t.Text = GetLang("msg_ConfigSkin"); 
+                        t.Text = GetLang("msgConfigSkin"); 
                 });
                 
                 try
@@ -785,13 +785,13 @@ namespace MinecraftLauncher
                 }
                 catch { }
 
-                Dispatcher.Invoke(() => { if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = GetLang("msg_StartGame"); });
+                Dispatcher.Invoke(() => { if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = GetLang("msgStartGame"); });
                 await Task.Delay(500);
 
                 process.EnableRaisingEvents = true;
                 process.Exited += (s, ev) =>
                 {
-                    Dispatcher.Invoke(() => { btnPlay.IsEnabled = true; btnPlay.Content = GetLang("btn_Checking"); CheckInstallationStatus(); this.WindowState = WindowState.Normal; });
+                    Dispatcher.Invoke(() => { btnPlay.IsEnabled = true; btnPlay.Content = GetLang("btnChecking"); CheckInstallationStatus(); this.WindowState = WindowState.Normal; });
                 };
 
                 process.Start();
@@ -801,18 +801,18 @@ namespace MinecraftLauncher
                 {
                     if (progressContainer != null) progressContainer.Visibility = Visibility.Collapsed;
                     _isInstalled = true;
-                    if (this.FindName("txtVersionLabel") is TextBlock lblVersion) lblVersion.Text = GetLang("lbl_CurrentVersion");
+                    if (this.FindName("txtVersionLabel") is TextBlock lblVersion) lblVersion.Text = GetLang("lblCurrentVersion");
 
-                    btnPlay.Content = GetLang("btn_Playing");
+                    btnPlay.Content = GetLang("btnPlaying");
                     btnPlay.IsEnabled = false;
-                    NotificationManager.Show(GetLang("msg_InGame"), GetLang("msg_Connecting"));
+                    NotificationManager.Show(GetLang("msgInGame"), GetLang("msgConnecting"));
                 });
             }
             catch (Exception ex)
             {
                 Dispatcher.Invoke(() =>
                 {
-                    NotificationManager.Show(GetLang("msg_SystemError"), ex.Message);
+                    NotificationManager.Show(GetLang("msgSystemError"), ex.Message);
                     if (progressContainer != null) progressContainer.Visibility = Visibility.Collapsed;
                     btnPlay.IsEnabled = true;
                     CheckInstallationStatus();
@@ -844,7 +844,7 @@ namespace MinecraftLauncher
             }
             else
             {
-                NotificationManager.Show(GetLang("msg_Error"), _isEnglish ? "Game folder does not exist yet!" : "Thư mục game chưa tồn tại! Hãy bấm Khởi Động lần đầu để tạo.");
+                NotificationManager.Show(GetLang("msgError"), _isEnglish ? "Game folder does not exist yet!" : "Thư mục game chưa tồn tại! Hãy bấm Khởi Động lần đầu để tạo.");
             }
         }
 
@@ -852,7 +852,7 @@ namespace MinecraftLauncher
         {
             if (_serverManifest == null)
             {
-                NotificationManager.Show(GetLang("msg_Error"), GetLang("msg_LoadConfigError"));
+                NotificationManager.Show(GetLang("msgError"), GetLang("msgLoadConfigError"));
                 return;
             }
 
@@ -890,7 +890,7 @@ namespace MinecraftLauncher
                     string jsonPath = Path.Combine(versionDir, targetVersion + ".json");
                     if (!File.Exists(jsonPath))
                     {
-                        Dispatcher.Invoke(() => { if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = GetLang("msg_FetchFabric"); });
+                        Dispatcher.Invoke(() => { if (this.FindName("txtDownloadStatus") is TextBlock t) t.Text = GetLang("msgFetchFabric"); });
                         if (!Directory.Exists(versionDir)) Directory.CreateDirectory(versionDir);
                         byte[] jsonBytes = await _httpClient.GetByteArrayAsync($"https://meta.fabricmc.net/v2/versions/loader/{_serverManifest.Version}/{_serverManifest.Loader_Version}/profile/json");
                         await File.WriteAllBytesAsync(jsonPath, jsonBytes);
@@ -914,7 +914,7 @@ namespace MinecraftLauncher
             }
             catch (Exception ex)
             {
-                Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msg_Error"), ex.Message));
+                Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msgError"), ex.Message));
             }
             finally
             {
@@ -930,7 +930,7 @@ namespace MinecraftLauncher
         private void menuUninstall_Click(object sender, RoutedEventArgs e)
         {
             string title = _isEnglish ? "UNINSTALL" : "GỠ CÀI ĐẶT";
-            string desc = GetLang("msg_UninstallConfirm");
+            string desc = GetLang("msgUninstallConfirm");
             string btnConfirmText = _isEnglish ? "CONFIRM" : "ĐỒNG Ý";
             string btnCancelText = _isEnglish ? "CANCEL" : "HỦY BỎ";
 
@@ -942,12 +942,12 @@ namespace MinecraftLauncher
                     if (Directory.Exists(_minecraftDirectory))
                     {
                         Directory.Delete(_minecraftDirectory, true);
-                        NotificationManager.Show(_isEnglish ? "SUCCESS" : "THÀNH CÔNG", GetLang("msg_UninstallSuccess"));
+                        NotificationManager.Show(_isEnglish ? "SUCCESS" : "THÀNH CÔNG", GetLang("msgUninstallSuccess"));
                     }
                 }
                 catch (Exception ex)
                 {
-                    NotificationManager.Show(GetLang("msg_Error"), ex.Message);
+                    NotificationManager.Show(GetLang("msgError"), ex.Message);
                 }
             }
         }
@@ -996,7 +996,7 @@ namespace MinecraftLauncher
 
         private void btnSelectSkin_Click(object sender, RoutedEventArgs e)
         {
-            var openFileDialog = new OpenFileDialog { Filter = "PNG Image (*.png)|*.png", Title = GetLang("msg_SelectSkin") };
+            var openFileDialog = new OpenFileDialog { Filter = "PNG Image (*.png)|*.png", Title = GetLang("msgSelectSkin") };
             if (openFileDialog.ShowDialog() == true)
             {
                 try
@@ -1004,7 +1004,7 @@ namespace MinecraftLauncher
                     var bitmap = new BitmapImage(new Uri(openFileDialog.FileName));
                     if (bitmap.PixelWidth != 64 || (bitmap.PixelHeight != 64 && bitmap.PixelHeight != 32))
                     {
-                        NotificationManager.Show(GetLang("msg_SkinError"), GetLang("msg_SkinSize"));
+                        NotificationManager.Show(GetLang("msgSkinError"), GetLang("msgSkinSize"));
                         return;
                     }
 
@@ -1012,7 +1012,7 @@ namespace MinecraftLauncher
                     _selectedSkinBase64 = Convert.ToBase64String(File.ReadAllBytes(openFileDialog.FileName));
                     if (this.FindName("btnUploadSkin") is Button btnUpload) btnUpload.IsEnabled = true;
                 }
-                catch (Exception ex) { NotificationManager.Show(GetLang("msg_ReadError"), ex.Message); }
+                catch (Exception ex) { NotificationManager.Show(GetLang("msgReadError"), ex.Message); }
             }
         }
 
@@ -1021,7 +1021,7 @@ namespace MinecraftLauncher
             if (string.IsNullOrEmpty(_selectedSkinBase64)) return;
 
             var btnUpload = this.FindName("btnUploadSkin") as Button;
-            if (btnUpload != null) { btnUpload.IsEnabled = false; btnUpload.Content = GetLang("btn_Uploading"); }
+            if (btnUpload != null) { btnUpload.IsEnabled = false; btnUpload.Content = GetLang("btnUploading"); }
 
             try
             {
@@ -1033,17 +1033,17 @@ namespace MinecraftLauncher
                 {
                     if (result != null && result.Success)
                     {
-                        NotificationManager.Show(GetLang("msg_Success"), GetLang("msg_SkinSuccess"));
+                        NotificationManager.Show(GetLang("msgSuccess"), GetLang("msgSkinSuccess"));
                         _selectedSkinBase64 = "";
                         if (btnUpload != null) btnUpload.IsEnabled = false;
                         if (this.FindName("imgSkinPreview") is Image imgPrev) imgPrev.Source = null;
                         await LoadUserSkinAsync();
                     }
-                    else NotificationManager.Show(GetLang("msg_Error"), result?.Message ?? GetLang("msg_SkinFail"));
+                    else NotificationManager.Show(GetLang("msgError"), result?.Message ?? GetLang("msgSkinFail"));
                 });
             }
-            catch (Exception ex) { Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msg_ConnectionError"), ex.Message)); }
-            finally { Dispatcher.Invoke(() => { if (btnUpload != null) btnUpload.Content = GetLang("btn_Upload"); }); }
+            catch (Exception ex) { Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msgConnectionError"), ex.Message)); }
+            finally { Dispatcher.Invoke(() => { if (btnUpload != null) btnUpload.Content = GetLang("btnUpload"); }); }
         }
 
         // ================= CÁC HÀM XỬ LÝ HỒ SƠ NHÂN VẬT =================
@@ -1057,47 +1057,47 @@ namespace MinecraftLauncher
 
             if (string.IsNullOrEmpty(oldPass) || string.IsNullOrEmpty(newPass) || string.IsNullOrEmpty(confirmPass))
             {
-                Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msg_Warning"), GetLang("msg_PassEmpty")));
+                Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msgWarning"), GetLang("msgPassEmpty")));
                 return;
             }
             if (newPass != confirmPass)
             {
-                Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msg_Warning"), GetLang("msg_PassNotMatch")));
+                Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msgWarning"), GetLang("msgPassNotMatch")));
                 return;
             }
 
             var btnSendOtp = this.FindName("btnSendPasswordOtp") as Button;
-            if (btnSendOtp != null) { btnSendOtp.IsEnabled = false; btnSendOtp.Content = GetLang("btn_Sending"); }
+            if (btnSendOtp != null) { btnSendOtp.IsEnabled = false; btnSendOtp.Content = GetLang("btnSending"); }
 
             try
             {
                 var content = new StringContent(JsonSerializer.Serialize(new { username = _username, oldPassword = oldPass }), Encoding.UTF8, "application/json");
                 string responseString = await (await _httpClient.PostAsync($"{API_SERVER_URL}/auth/request-password-otp", content)).Content.ReadAsStringAsync();
 
-                if (responseString.Trim().StartsWith("<")) throw new Exception(GetLang("msg_ServerHtml"));
+                if (responseString.Trim().StartsWith("<")) throw new Exception(GetLang("msgServerHtml"));
 
                 var result = JsonSerializer.Deserialize<ServerInfoResponse>(responseString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                 Dispatcher.Invoke(() =>
                 {
-                    if (btnSendOtp != null) { btnSendOtp.IsEnabled = true; btnSendOtp.Content = GetLang("btn_ChangePassword"); }
+                    if (btnSendOtp != null) { btnSendOtp.IsEnabled = true; btnSendOtp.Content = GetLang("btnChangePassword"); }
 
                     if (result != null && result.Success)
                     {
-                        NotificationManager.Show(GetLang("msg_Success"), GetLang("msg_OtpSent"));
+                        NotificationManager.Show(GetLang("msgSuccess"), GetLang("msgOtpSent"));
                         var pnlPassIn = this.FindName("pnlPasswordInput") as FrameworkElement;
                         var pnlPassVer = this.FindName("pnlPasswordOtpVerify") as FrameworkElement;
                         if (pnlPassIn != null && pnlPassVer != null) PlayTransitionAnimation(pnlPassVer, pnlPassIn);
                     }
-                    else NotificationManager.Show(GetLang("msg_Error"), result?.Message ?? GetLang("msg_WrongPass"));
+                    else NotificationManager.Show(GetLang("msgError"), result?.Message ?? GetLang("msgWrongPass"));
                 });
             }
             catch (Exception ex)
             {
                 Dispatcher.Invoke(() =>
                 {
-                    NotificationManager.Show(GetLang("msg_ConnectionError"), ex.Message);
-                    if (btnSendOtp != null) { btnSendOtp.IsEnabled = true; btnSendOtp.Content = GetLang("btn_ChangePassword"); }
+                    NotificationManager.Show(GetLang("msgConnectionError"), ex.Message);
+                    if (btnSendOtp != null) { btnSendOtp.IsEnabled = true; btnSendOtp.Content = GetLang("btnChangePassword"); }
                 });
             }
         }
@@ -1121,7 +1121,7 @@ namespace MinecraftLauncher
 
             string newPass = txtNewPass?.Password ?? ""; string otp = txtPassOtp?.Text ?? "";
 
-            if (string.IsNullOrEmpty(otp)) { Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msg_Warning"), GetLang("msg_EnterOtp"))); return; }
+            if (string.IsNullOrEmpty(otp)) { Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msgWarning"), GetLang("msgEnterOtp"))); return; }
 
             try
             {
@@ -1132,7 +1132,7 @@ namespace MinecraftLauncher
                 {
                     if (result != null && result.Success)
                     {
-                        NotificationManager.Show(GetLang("msg_Success"), GetLang("msg_PassChangeSuccess"));
+                        NotificationManager.Show(GetLang("msgSuccess"), GetLang("msgPassChangeSuccess"));
                         btnCancelPasswordOtp_Click(null, null);
                         if (File.Exists(SESSION_FILE))
                         {
@@ -1144,10 +1144,10 @@ namespace MinecraftLauncher
                             catch { }
                         }
                     }
-                    else NotificationManager.Show(GetLang("msg_Error"), result?.Message ?? GetLang("msg_InvalidOtp"));
+                    else NotificationManager.Show(GetLang("msgError"), result?.Message ?? GetLang("msgInvalidOtp"));
                 });
             }
-            catch (Exception ex) { Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msg_ConnectionError"), ex.Message)); }
+            catch (Exception ex) { Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msgConnectionError"), ex.Message)); }
         }
 
         private async void btnSendEmailOtp_Click(object sender, RoutedEventArgs e)
@@ -1155,40 +1155,40 @@ namespace MinecraftLauncher
             var txtEmail = this.FindName("txtNewEmail") as TextBox;
             string newEmail = txtEmail?.Text ?? "";
 
-            if (string.IsNullOrEmpty(newEmail)) { Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msg_Warning"), GetLang("msg_EmailEmpty"))); return; }
+            if (string.IsNullOrEmpty(newEmail)) { Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msgWarning"), GetLang("msgEmailEmpty"))); return; }
 
             var btnSendEm = this.FindName("btnSendEmailOtp") as Button;
-            if (btnSendEm != null) { btnSendEm.IsEnabled = false; btnSendEm.Content = GetLang("btn_Sending"); }
+            if (btnSendEm != null) { btnSendEm.IsEnabled = false; btnSendEm.Content = GetLang("btnSending"); }
 
             try
             {
                 var content = new StringContent(JsonSerializer.Serialize(new { username = _username, newEmail = newEmail }), Encoding.UTF8, "application/json");
                 string responseString = await (await _httpClient.PostAsync($"{API_SERVER_URL}/auth/request-email-change", content)).Content.ReadAsStringAsync();
 
-                if (responseString.Trim().StartsWith("<")) throw new Exception(GetLang("msg_ServerHtml"));
+                if (responseString.Trim().StartsWith("<")) throw new Exception(GetLang("msgServerHtml"));
 
                 var result = JsonSerializer.Deserialize<ServerInfoResponse>(responseString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                 Dispatcher.Invoke(() =>
                 {
-                    if (btnSendEm != null) { btnSendEm.IsEnabled = true; btnSendEm.Content = GetLang("btn_ChangeEmail"); }
+                    if (btnSendEm != null) { btnSendEm.IsEnabled = true; btnSendEm.Content = GetLang("btnChangeEmail"); }
 
                     if (result != null && result.Success)
                     {
-                        NotificationManager.Show(GetLang("msg_Success"), GetLang("msg_OtpSent"));
+                        NotificationManager.Show(GetLang("msgSuccess"), GetLang("msgOtpSent"));
                         var pnlEmIn = this.FindName("pnlEmailInput") as FrameworkElement;
                         var pnlEmVer = this.FindName("pnlOtpVerify") as FrameworkElement;
                         if (pnlEmIn != null && pnlEmVer != null) PlayTransitionAnimation(pnlEmVer, pnlEmIn);
                     }
-                    else NotificationManager.Show(GetLang("msg_Error"), result?.Message ?? GetLang("msg_EmailFail"));
+                    else NotificationManager.Show(GetLang("msgError"), result?.Message ?? GetLang("msgEmailFail"));
                 });
             }
             catch (Exception ex)
             {
                 Dispatcher.Invoke(() =>
                 {
-                    NotificationManager.Show(GetLang("msg_ConnectionError"), ex.Message);
-                    if (btnSendEm != null) { btnSendEm.IsEnabled = true; btnSendEm.Content = GetLang("btn_ChangeEmail"); }
+                    NotificationManager.Show(GetLang("msgConnectionError"), ex.Message);
+                    if (btnSendEm != null) { btnSendEm.IsEnabled = true; btnSendEm.Content = GetLang("btnChangeEmail"); }
                 });
             }
         }
@@ -1210,7 +1210,7 @@ namespace MinecraftLauncher
 
             string newEmail = txtEmail?.Text ?? ""; string otp = txtOtp?.Text ?? "";
 
-            if (string.IsNullOrEmpty(newEmail) || string.IsNullOrEmpty(otp)) { Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msg_Warning"), GetLang("msg_EmailOtpEmpty"))); return; }
+            if (string.IsNullOrEmpty(newEmail) || string.IsNullOrEmpty(otp)) { Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msgWarning"), GetLang("msgEmailOtpEmpty"))); return; }
 
             try
             {
@@ -1221,13 +1221,13 @@ namespace MinecraftLauncher
                 {
                     if (result != null && result.Success)
                     {
-                        NotificationManager.Show(GetLang("msg_Success"), GetLang("msg_EmailChangeSuccess"));
+                        NotificationManager.Show(GetLang("msgSuccess"), GetLang("msgEmailChangeSuccess"));
                         btnCancelEmailOtp_Click(null, null);
                     }
-                    else NotificationManager.Show(GetLang("msg_Error"), result?.Message ?? GetLang("msg_InvalidOtp"));
+                    else NotificationManager.Show(GetLang("msgError"), result?.Message ?? GetLang("msgInvalidOtp"));
                 });
             }
-            catch (Exception ex) { Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msg_ConnectionError"), ex.Message)); }
+            catch (Exception ex) { Dispatcher.Invoke(() => NotificationManager.Show(GetLang("msgConnectionError"), ex.Message)); }
         }
 
         // ================= XỬ LÝ ADD SHADER =================
@@ -1238,7 +1238,7 @@ namespace MinecraftLauncher
                 var openFileDialog = new OpenFileDialog
                 {
                     Filter = "Shaderpack (*.zip)|*.zip",
-                    Title = GetLang("msg_SelectShader")
+                    Title = GetLang("msgSelectShader")
                 };
 
                 if (openFileDialog.ShowDialog() == true)
@@ -1253,10 +1253,10 @@ namespace MinecraftLauncher
                     string destFilePath = Path.Combine(shaderPacksDir, fileName);
 
                     File.Copy(sourceFilePath, destFilePath, true);
-                    NotificationManager.Show(GetLang("msg_Success"), GetLang("msg_ShaderSuccess"));
+                    NotificationManager.Show(GetLang("msgSuccess"), GetLang("msgShaderSuccess"));
                 }
             }
-            catch (Exception ex) { NotificationManager.Show(GetLang("msg_Error"), ex.Message); }
+            catch (Exception ex) { NotificationManager.Show(GetLang("msgError"), ex.Message); }
         }
 
         // ================= SỰ KIỆN ANIMATION CHUYỂN TAB =================
@@ -1440,8 +1440,8 @@ namespace MinecraftLauncher
             var updateInfo = (sender as Button)?.Tag as UpdateInfo;
             if (updateInfo == null || string.IsNullOrEmpty(updateInfo.DownloadUrl)) return;
 
-            string title = GetLang("msg_UpdateAvailableTitle");
-            string desc = string.Format(GetLang("msg_UpdateAvailableDesc"), updateInfo.Version);
+            string title = GetLang("msgUpdateAvailableTitle");
+            string desc = string.Format(GetLang("msgUpdateAvailableDesc"), updateInfo.Version);
 
             if (NotificationManager.ShowConfirm(title, desc))
             {
@@ -1462,10 +1462,10 @@ namespace MinecraftLauncher
             if (_activeGamePid != -1)
             {
                 // Gọi đa ngôn ngữ từ thư viện thay vì set cứng
-                string title = GetLang("msg_ConfirmExitTitle");
-                string desc = GetLang("msg_ConfirmExitDesc");
-                string btnOk = GetLang("btn_Confirm");
-                string btnCancel = GetLang("btn_Cancel");
+                string title = GetLang("msgConfirmExitTitle");
+                string desc = GetLang("msgConfirmExitDesc");
+                string btnOk = GetLang("btnConfirm");
+                string btnCancel = GetLang("btnCancel");
 
                 // Bung bảng hỏi xác nhận
                 bool confirm = NotificationManager.ShowConfirm(title, desc, btnOk, btnCancel);
@@ -1568,7 +1568,7 @@ namespace MinecraftLauncher
             this.Hide(); 
             
             if (showNotification) 
-                NotificationManager.Show(GetLang("msg_TrayNotifyTitle"), GetLang("msg_TrayNotifyDesc"));
+                NotificationManager.Show(GetLang("msgTrayNotifyTitle"), GetLang("msgTrayNotifyDesc"));
         }
 
         public void RestoreFromTray()
@@ -1590,7 +1590,7 @@ namespace MinecraftLauncher
                 _activeGamePid = -1;
                 Dispatcher.Invoke(() => {
                     btnPlay.IsEnabled = true;
-                    btnPlay.Content = GetLang("btn_Checking");
+                    btnPlay.Content = GetLang("btnChecking");
                     CheckInstallationStatus();
                     RestoreFromTray(); 
                 });
@@ -1598,7 +1598,7 @@ namespace MinecraftLauncher
 
             Dispatcher.Invoke(() => {
                 btnPlay.IsEnabled = false;
-                btnPlay.Content = GetLang("btn_Playing");
+                btnPlay.Content = GetLang("btnPlaying");
                 
                 // GỠ BỎ ĐIỀU KIỆN IF: Luôn luôn ép Launcher ẩn xuống khay khi vào game
                 // Truyền 'false' để không bị chèn ép thông báo "VÀO GAME"
