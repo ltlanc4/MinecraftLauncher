@@ -1591,59 +1591,50 @@
                                                 </StackPanel>
 
                                                 <Grid Width="250"
-                                                      Height="80">
+                                                        Height="80">
                                                         <Grid.ColumnDefinitions>
                                                                 <ColumnDefinition Width="*"/>
                                                                 <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
 
                                                         <Button Content="{Binding PlayButtonContent}"
-                                                                Command="{Binding PlayCommand}"
-                                                                Grid.Column="0">
+                                                                        Command="{Binding PlayCommand}"
+                                                                        Grid.Column="0">
                                                                 <Button.Style>
                                                                         <Style TargetType="Button"
-                                                                               BasedOn="{StaticResource PlayButton}">
-                                                                                <Style.Triggers>
-                                                                                        <DataTrigger Binding="{Binding IsGameInstalled}"
-                                                                                                     Value="True">
-                                                                                                <Setter Property="BorderThickness"
-                                                                                                        Value="1,1,0,1"/>
-                                                                                                <Setter Property="Tag">
-                                                                                                        <Setter.Value>
-                                                                                                                <CornerRadius>4,0,0,4</CornerRadius>
-                                                                                                        </Setter.Value>
-                                                                                                </Setter>
-                                                                                        </DataTrigger>
+                                                                                        BasedOn="{StaticResource PlayButton}">
+                                                                                <Setter Property="BorderThickness"
+                                                                                                Value="1,1,0,1"/>
+                                                                                <Setter Property="Tag">
+                                                                                        <Setter.Value>
+                                                                                                <CornerRadius>4,0,0,4</CornerRadius>
+                                                                                        </Setter.Value>
+                                                                                </Setter>
 
-                                                                                        <MultiDataTrigger>
-                                                                                                <MultiDataTrigger.Conditions>
-                                                                                                        <Condition Binding="{Binding IsGameInstalled}"
-                                                                                                                   Value="True"/>
-                                                                                                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}"
-                                                                                                                   Value="True"/>
-                                                                                                </MultiDataTrigger.Conditions>
+                                                                                <Style.Triggers>
+                                                                                        <Trigger Property="IsMouseOver"
+                                                                                                        Value="True">
                                                                                                 <Setter Property="BorderThickness"
-                                                                                                        Value="1"/>
+                                                                                                                Value="1"/>
                                                                                                 <Setter Property="Margin"
-                                                                                                        Value="0,0,-1,0"/>
+                                                                                                                Value="0,0,-1,0"/>
                                                                                                 <Setter Property="Panel.ZIndex"
-                                                                                                        Value="1"/>
-                                                                                        </MultiDataTrigger>
+                                                                                                                Value="1"/>
+                                                                                        </Trigger>
                                                                                 </Style.Triggers>
                                                                         </Style>
                                                                 </Button.Style>
                                                         </Button>
 
                                                         <Button Content="≡"
-                                                                Grid.Column="1"
-                                                                Width="55"
-                                                                Click="btnGameMenu_Click"
-                                                                Visibility="{Binding IsGameInstalled, Converter={StaticResource BoolToVisConverter}}">
+                                                                        Grid.Column="1"
+                                                                        Width="55"
+                                                                        Click="btnGameMenu_Click">
                                                                 <Button.Style>
                                                                         <Style TargetType="Button"
-                                                                               BasedOn="{StaticResource PlayButton}">
+                                                                                        BasedOn="{StaticResource PlayButton}">
                                                                                 <Setter Property="BorderThickness"
-                                                                                        Value="1"/>
+                                                                                                Value="1"/>
                                                                                 <Setter Property="Tag">
                                                                                         <Setter.Value>
                                                                                                 <CornerRadius>0,4,4,0</CornerRadius>
@@ -1651,9 +1642,9 @@
                                                                                 </Setter>
                                                                                 <Style.Triggers>
                                                                                         <Trigger Property="IsMouseOver"
-                                                                                                 Value="True">
+                                                                                                        Value="True">
                                                                                                 <Setter Property="Panel.ZIndex"
-                                                                                                        Value="1"/>
+                                                                                                                Value="1"/>
                                                                                         </Trigger>
                                                                                 </Style.Triggers>
                                                                         </Style>
@@ -1661,17 +1652,17 @@
 
                                                                 <Button.ContextMenu>
                                                                         <ContextMenu Style="{StaticResource SakuraContextMenu}"
-                                                                                     DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                                                                        DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                                                                                 <MenuItem Header="{Binding Lang[menuOpenFolder]}"
-                                                                                          Command="{Binding OpenFolderCommand}"
-                                                                                          Style="{StaticResource SakuraMenuItem}"/>
+                                                                                                Command="{Binding OpenFolderCommand}"
+                                                                                                Style="{StaticResource SakuraMenuItem}"/>
                                                                                 <MenuItem Header="{Binding Lang[menuVerify]}"
-                                                                                          Command="{Binding VerifyFilesCommand}"
-                                                                                          Style="{StaticResource SakuraMenuItem}"/>
+                                                                                                Command="{Binding VerifyFilesCommand}"
+                                                                                                Style="{StaticResource SakuraMenuItem}"/>
                                                                                 <Separator Style="{StaticResource SakuraMenuSeparator}"/>
                                                                                 <MenuItem Header="{Binding Lang[menuUninstall]}"
-                                                                                          Command="{Binding UninstallGameCommand}"
-                                                                                          Style="{StaticResource UninstallMenuItemStyle}"/>
+                                                                                                Command="{Binding UninstallGameCommand}"
+                                                                                                Style="{StaticResource UninstallMenuItemStyle}"/>
                                                                         </ContextMenu>
                                                                 </Button.ContextMenu>
                                                         </Button>
