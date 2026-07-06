@@ -79,6 +79,8 @@ public partial class App : Application
 
             // Vẫn tiếp tục quy trình nạp giao diện bình thường
             base.OnStartup(e);
+            var mainWindow = new MainWindow(); 
+            mainWindow.Show();
         }
 }
 

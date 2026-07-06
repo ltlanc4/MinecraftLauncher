@@ -1,0 +1,345 @@
+﻿<Window x:Class="MinecraftLauncher.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:MinecraftLauncher"
+        Title="OtonashiRei MCServer"
+        Height="720"
+        Width="1280"
+        Icon="pack://application:,,,/Assets/icon.jpg"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        KeyDown="Window_KeyDown">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+        
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#F36895"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Height" Value="45"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#FA8EB1"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="SecondaryButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#BFA6C4"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Height" Value="45"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="#F36895"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="Control" x:Key="ModernInput">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#25142B"/>
+            <Setter Property="BorderBrush" Value="#452751"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Control">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ModernCheckBox" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="#E2D4E6"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Grid Background="Transparent">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="CheckBorder" Grid.Column="0" Width="18" Height="18" Background="#25142B" BorderBrush="#452751" BorderThickness="1" CornerRadius="3" Margin="0,0,10,0" VerticalAlignment="Center">
+                                <Path x:Name="CheckMark" Data="M 0,3 L 3,6 L 8,0" Stroke="White" StrokeThickness="1.5" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                            </Border>
+                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="CheckBorder" Property="Background" Value="#F36895"/>
+                                <Setter TargetName="CheckBorder" Property="BorderBrush" Value="#F36895"/>
+                                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="CheckBorder" Property="BorderBrush" Value="#F36895"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <local:ParamConverter x:Key="ParamConverter" />
+    </Window.Resources>
+
+    <Grid Background="#150B1A">
+        <Image Source="pack://application:,,,/Assets/bg.png" Stretch="UniformToFill"/>
+        <Rectangle Fill="#33000000"/>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="450"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="1" Background="#F2140A18" Padding="40" BorderBrush="#F36895" BorderThickness="4,0,0,0">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                        <Button Content="{Binding LangBtnText}" Command="{Binding ChangeLanguageCommand}" Width="50" Height="30" Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="Transparent">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Foreground" Value="#94A3B8"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#F36895"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        
+                        <Button Content="—" Width="40" Height="30" Cursor="Hand" Click="MinimizeButton_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="Transparent">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Foreground" Value="#94A3B8"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#F36895"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <Button Content="✕" Width="40" Height="30" Cursor="Hand" Click="CloseButton_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="Transparent">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Foreground" Value="#94A3B8"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#F36895"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+
+                    <StackPanel x:Name="LoginPanel" VerticalAlignment="Center" Visibility="Visible">
+                        <WrapPanel Margin="0,0,0,40">
+                            <TextBlock Text="OTONASHIREI " FontSize="28" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="MCSERVER" FontSize="28" FontWeight="Bold" Foreground="#F36895"/>
+                        </WrapPanel>
+
+                        <TextBlock Text="{Binding Lang[lblLoginUsernameStr]}" Foreground="#BFA6C4" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <TextBox x:Name="txtLoginUsername" Text="{Binding LoginUsername, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernInput}" Height="45" Margin="0,0,0,20"/>
+
+                        <TextBlock Text="{Binding Lang[lblLoginPasswordStr]}" Foreground="#BFA6C4" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <PasswordBox x:Name="txtLoginPassword" Style="{StaticResource ModernInput}" Height="45" Margin="0,0,0,20"/>
+
+                        <CheckBox IsChecked="{Binding RememberMe}" Content="{Binding Lang[chkRememberMe]}" Style="{StaticResource ModernCheckBox}" Margin="0,0,0,30"/>
+
+                        <Button Content="{Binding Lang[btnLogin]}" Command="{Binding LoginCommand}" CommandParameter="{Binding ElementName=txtLoginPassword}" Style="{StaticResource PrimaryButton}" Margin="0,0,0,20"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" Cursor="Hand" VerticalAlignment="Center">
+                                <StackPanel.InputBindings>
+                                    <MouseBinding MouseAction="LeftClick" Command="{Binding SwitchPanelCommand}" CommandParameter="Register"/>
+                                </StackPanel.InputBindings>
+                                <TextBlock Text="{Binding Lang[lblRegisterPrompt]}" Foreground="#BFA6C4" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding Lang[btnRegisterText]}" Foreground="#F36895" FontWeight="Bold" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <TextBlock Grid.Column="1" Text="{Binding Lang[btnForgotPassword]}" Foreground="#BFA6C4" Cursor="Hand" VerticalAlignment="Center">
+                                <TextBlock.InputBindings>
+                                    <MouseBinding MouseAction="LeftClick" Command="{Binding SwitchPanelCommand}" CommandParameter="ForgotPasswordStep1"/>
+                                </TextBlock.InputBindings>
+                            </TextBlock>
+                        </Grid>
+                    </StackPanel>
+
+                    <StackPanel x:Name="RegisterPanel" VerticalAlignment="Center" Visibility="Collapsed">
+                        <WrapPanel Margin="0,0,0,30">
+                            <TextBlock Text="{Binding Lang[lblRegTitle1]}" FontSize="28" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="{Binding Lang[lblRegTitle2]}" FontSize="28" FontWeight="Bold" Foreground="#F36895"/>
+                        </WrapPanel>
+
+                        <TextBlock Text="{Binding Lang[lblRegUsernameStr]}" Foreground="#BFA6C4" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <TextBox x:Name="txtRegUsername" Text="{Binding RegUsername, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernInput}" Height="45" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="{Binding Lang[lblRegEmailStr]}" Foreground="#BFA6C4" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <TextBox x:Name="txtRegEmail" Text="{Binding RegEmail, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernInput}" Height="45" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="{Binding Lang[lblRegPasswordStr]}" Foreground="#BFA6C4" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <PasswordBox x:Name="txtRegPassword" Style="{StaticResource ModernInput}" Height="45" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="{Binding Lang[lblRegConfirmStr]}" Foreground="#BFA6C4" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <PasswordBox x:Name="txtRegConfirm" Style="{StaticResource ModernInput}" Height="45" Margin="0,0,0,30"/>
+
+                        <Button Content="{Binding Lang[btnRegister]}" Command="{Binding RegisterCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,0,10">
+                            <Button.CommandParameter>
+                                <MultiBinding Converter="{StaticResource ParamConverter}">
+                                    <Binding ElementName="txtRegPassword"/>
+                                    <Binding ElementName="txtRegConfirm"/>
+                                </MultiBinding>
+                            </Button.CommandParameter>
+                        </Button>
+                        
+                        <Button Content="{Binding Lang[btnBackToLogin1]}" Command="{Binding SwitchPanelCommand}" CommandParameter="Login" Style="{StaticResource SecondaryButton}"/>
+                    </StackPanel>
+
+                    <Grid x:Name="ForgotPasswordPanel" VerticalAlignment="Center" Visibility="Collapsed">
+                        
+                        <StackPanel x:Name="pnlRecoveryStep1" Visibility="Visible">
+                            <WrapPanel Margin="0,0,0,20">
+                                <TextBlock Text="{Binding Lang[lblForgotTitle1]}" FontSize="28" FontWeight="Bold" Foreground="White"/>
+                                <TextBlock Text="{Binding Lang[lblForgotTitle2]}" FontSize="28" FontWeight="Bold" Foreground="#F36895"/>
+                            </WrapPanel>
+
+                            <TextBlock Text="{Binding Lang[lblForgotDesc]}" Foreground="#BFA6C4" FontSize="14" TextWrapping="Wrap" Margin="0,0,0,30" LineHeight="22"/>
+
+                            <TextBlock Text="{Binding Lang[lblForgotUserStr]}" Foreground="#BFA6C4" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <TextBox x:Name="txtRecoveryUsername" Text="{Binding RecoveryUsername, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernInput}" Height="45" Margin="0,0,0,15"/>
+
+                            <TextBlock Text="{Binding Lang[lblForgotEmailStr]}" Foreground="#BFA6C4" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <TextBox x:Name="txtRecoveryEmail" Text="{Binding RecoveryEmail, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernInput}" Height="45" Margin="0,0,0,30"/>
+
+                            <Button Content="{Binding Lang[btnSendCode]}" Command="{Binding SendRecoveryCodeCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,0,10"/>
+                            
+                            <Button Content="{Binding Lang[btnBackToLogin2]}" Command="{Binding SwitchPanelCommand}" CommandParameter="Login" Style="{StaticResource SecondaryButton}"/>
+                        </StackPanel>
+
+                        <StackPanel x:Name="pnlRecoveryStep2" Visibility="Collapsed">
+                            <WrapPanel Margin="0,0,0,20">
+                                <TextBlock Text="{Binding Lang[lblResetTitle1]}" FontSize="28" FontWeight="Bold" Foreground="White"/>
+                                <TextBlock Text="{Binding Lang[lblResetTitle2]}" FontSize="28" FontWeight="Bold" Foreground="#F36895"/>
+                            </WrapPanel>
+
+                            <TextBlock Text="{Binding Lang[lblResetDesc]}" Foreground="#BFA6C4" FontSize="14" TextWrapping="Wrap" Margin="0,0,0,30" LineHeight="22"/>
+
+                            <TextBlock Text="{Binding Lang[lblResetOtpStr]}" Foreground="#BFA6C4" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <TextBox x:Name="txtRecoveryCode" Text="{Binding RecoveryCode, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernInput}" Height="45" Margin="0,0,0,15"/>
+
+                            <TextBlock Text="{Binding Lang[lblResetNewPassStr]}" Foreground="#BFA6C4" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <PasswordBox x:Name="txtRecoveryNewPass" Style="{StaticResource ModernInput}" Height="45" Margin="0,0,0,15"/>
+
+                            <TextBlock Text="{Binding Lang[lblResetConfirmStr]}" Foreground="#BFA6C4" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <PasswordBox x:Name="txtRecoveryConfirmPass" Style="{StaticResource ModernInput}" Height="45" Margin="0,0,0,30"/>
+
+                            <Button Content="{Binding Lang[btnConfirmReset]}" Command="{Binding ConfirmResetPasswordCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,0,10">
+                                <Button.CommandParameter>
+                                    <MultiBinding Converter="{StaticResource ParamConverter}">
+                                        <Binding ElementName="txtRecoveryNewPass"/>
+                                        <Binding ElementName="txtRecoveryConfirmPass"/>
+                                    </MultiBinding>
+                                </Button.CommandParameter>
+                            </Button>
+                            
+                            <Button Content="{Binding Lang[btnCancelReset]}" Command="{Binding SwitchPanelCommand}" CommandParameter="Login" Style="{StaticResource SecondaryButton}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid x:Name="LoadingOverlay" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisConverter}}" Background="#F2140A18" Margin="-40" Panel.ZIndex="20">
+                        <Grid.Resources>
+                            <Storyboard x:Key="SpinAnimation" RepeatBehavior="Forever">
+                                <DoubleAnimation Storyboard.TargetName="SpinnerTransform" Storyboard.TargetProperty="Angle" From="0" To="360" Duration="0:0:1"/>
+                            </Storyboard>
+                        </Grid.Resources>
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <Grid Width="50" Height="50">
+                                <Ellipse Stroke="#26F36895" StrokeThickness="4"/>
+                                <Ellipse Stroke="#F36895" StrokeThickness="4" StrokeDashArray="3 1">
+                                    <Ellipse.RenderTransform>
+                                        <RotateTransform x:Name="SpinnerTransform" CenterX="25" CenterY="25"/>
+                                    </Ellipse.RenderTransform>
+                                </Ellipse>
+                            </Grid>
+                            
+                            <TextBlock x:Name="lblLoadingText" 
+                                       Text="{Binding LoadingMessage}" 
+                                       Foreground="#F36895" 
+                                       FontWeight="Bold" 
+                                       FontSize="13" 
+                                       Margin="0,20,0,0" 
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>
