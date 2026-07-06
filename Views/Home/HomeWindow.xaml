@@ -4,63 +4,64 @@
         xmlns:local="clr-namespace:MinecraftLauncher"
         Title="OtonashiRei MCServer"
         Icon="pack://application:,,,/Assets/icon.jpg"
-        Height="720" Width="1280"
+        Height="720"
+        Width="1280"
         WindowStartupLocation="CenterScreen"
-        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
         ResizeMode="NoResize">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
         <local:ParamConverter x:Key="ParamConverter"/>
-        <Style TargetType="RadioButton" x:Key="SakuraRadioButtonStyle">
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Cursor" Value="Hand"/>
+        <Style TargetType="RadioButton"
+                x:Key="SakuraRadioButtonStyle">
+            <Setter Property="Foreground"
+                    Value="White"/>
+            <Setter Property="FontSize"
+                    Value="13"/>
+            <Setter Property="Cursor"
+                    Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <StackPanel Orientation="Horizontal" Background="Transparent">
-                            <Grid Height="16" Width="16" Margin="0,0,6,0">
-                                <Ellipse x:Name="OuterRing" Stroke="#888888" StrokeThickness="1.5" Fill="Transparent"/>
-                                <Ellipse x:Name="InnerBullet" Fill="#FF6B9E" Margin="4" Opacity="0"/>
+                        <StackPanel Orientation="Horizontal"
+                                Background="Transparent">
+                            <Grid Height="16"
+                                    Width="16"
+                                    Margin="0,0,6,0">
+                                <Ellipse x:Name="OuterRing"
+                                        Stroke="#888888"
+                                        StrokeThickness="1.5"
+                                        Fill="Transparent"/>
+                                <Ellipse x:Name="InnerBullet"
+                                        Fill="#FF6B9E"
+                                        Margin="4"
+                                        Opacity="0"/>
                             </Grid>
-                            <ContentPresenter VerticalAlignment="Center" x:Name="txtContent"/>
+                            <ContentPresenter VerticalAlignment="Center"
+                                    x:Name="txtContent"/>
                         </StackPanel>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="OuterRing" Property="Stroke" Value="#FF6B9E"/>
-                                <Setter TargetName="InnerBullet" Property="Opacity" Value="1"/>
-                                <Setter Property="Foreground" Value="White"/>
-                                <Setter Property="FontWeight" Value="Bold"/>
+                            <Trigger Property="IsChecked"
+                                    Value="True">
+                                <Setter TargetName="OuterRing"
+                                        Property="Stroke"
+                                        Value="#FF6B9E"/>
+                                <Setter TargetName="InnerBullet"
+                                        Property="Opacity"
+                                        Value="1"/>
+                                <Setter Property="Foreground"
+                                        Value="White"/>
+                                <Setter Property="FontWeight"
+                                        Value="Bold"/>
                             </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="OuterRing" Property="Stroke" Value="#FFB7C5"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        
-        <Style x:Key="SakuraSliderThumbStyle" TargetType="Thumb">
-            <Setter Property="OverridesDefaultStyle" Value="true"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Thumb">
-                        <Ellipse x:Name="ellipse" Fill="#F36895" Width="18" Height="18" Stroke="#FFFFFF" StrokeThickness="2" Cursor="Hand">
-                            <Ellipse.Effect>
-                                <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#F36895" Opacity="0.5"/>
-                            </Ellipse.Effect>
-                        </Ellipse>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="true">
-                                <Setter TargetName="ellipse" Property="Fill" Value="#FA8EB1"/>
-                                <Setter TargetName="ellipse" Property="Width" Value="20"/>
-                                <Setter TargetName="ellipse" Property="Height" Value="20"/>
-                            </Trigger>
-                            <Trigger Property="IsDragging" Value="true">
-                                <Setter TargetName="ellipse" Property="Fill" Value="#FFFFFF"/>
-                                <Setter TargetName="ellipse" Property="Stroke" Value="#F36895"/>
+                            <Trigger Property="IsMouseOver"
+                                    Value="True">
+                                <Setter TargetName="OuterRing"
+                                        Property="Stroke"
+                                        Value="#FFB7C5"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -68,23 +69,81 @@
             </Setter>
         </Style>
 
-        <Style x:Key="SakuraSliderStyle" TargetType="Slider">
+        <Style x:Key="SakuraSliderThumbStyle"
+                TargetType="Thumb">
+            <Setter Property="OverridesDefaultStyle"
+                    Value="true"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Ellipse x:Name="ellipse"
+                                Fill="#F36895"
+                                Width="18"
+                                Height="18"
+                                Stroke="#FFFFFF"
+                                StrokeThickness="2"
+                                Cursor="Hand">
+                            <Ellipse.Effect>
+                                <DropShadowEffect BlurRadius="6"
+                                        ShadowDepth="0"
+                                        Color="#F36895"
+                                        Opacity="0.5"/>
+                            </Ellipse.Effect>
+                        </Ellipse>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver"
+                                    Value="true">
+                                <Setter TargetName="ellipse"
+                                        Property="Fill"
+                                        Value="#FA8EB1"/>
+                                <Setter TargetName="ellipse"
+                                        Property="Width"
+                                        Value="20"/>
+                                <Setter TargetName="ellipse"
+                                        Property="Height"
+                                        Value="20"/>
+                            </Trigger>
+                            <Trigger Property="IsDragging"
+                                    Value="true">
+                                <Setter TargetName="ellipse"
+                                        Property="Fill"
+                                        Value="#FFFFFF"/>
+                                <Setter TargetName="ellipse"
+                                        Property="Stroke"
+                                        Value="#F36895"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SakuraSliderStyle"
+                TargetType="Slider">
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Slider">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto" MinHeight="{TemplateBinding MinHeight}"/>
+                                <RowDefinition Height="Auto"
+                                        MinHeight="{TemplateBinding MinHeight}"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <Border Grid.Row="1" Height="6" Background="#33F36895" CornerRadius="3" Margin="5,0"/>
-                            <Track Grid.Row="1" x:Name="PART_Track">
+                            <Border Grid.Row="1"
+                                    Height="6"
+                                    Background="#33F36895"
+                                    CornerRadius="3"
+                                    Margin="5,0"/>
+                            <Track Grid.Row="1"
+                                    x:Name="PART_Track">
                                 <Track.DecreaseRepeatButton>
                                     <RepeatButton Command="{x:Static Slider.DecreaseLarge}">
                                         <RepeatButton.Template>
                                             <ControlTemplate TargetType="RepeatButton">
-                                                <Border Height="6" Background="#F36895" CornerRadius="3,0,0,3"/>
+                                                <Border Height="6"
+                                                        Background="#F36895"
+                                                        CornerRadius="3,0,0,3"/>
                                             </ControlTemplate>
                                         </RepeatButton.Template>
                                     </RepeatButton>
@@ -92,12 +151,15 @@
                                 <Track.IncreaseRepeatButton>
                                     <RepeatButton Command="{x:Static Slider.IncreaseLarge}">
                                         <RepeatButton.Template>
-                                            <ControlTemplate TargetType="RepeatButton"><Border Background="Transparent"/></ControlTemplate>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Background="Transparent"/>
+                                            </ControlTemplate>
                                         </RepeatButton.Template>
                                     </RepeatButton>
                                 </Track.IncreaseRepeatButton>
                                 <Track.Thumb>
-                                    <Thumb Style="{StaticResource SakuraSliderThumbStyle}" VerticalAlignment="Center"/>
+                                    <Thumb Style="{StaticResource SakuraSliderThumbStyle}"
+                                            VerticalAlignment="Center"/>
                                 </Track.Thumb>
                             </Track>
                         </Grid>
@@ -106,37 +168,59 @@
             </Setter>
         </Style>
 
-        <Style x:Key="SakuraMenuSeparator" TargetType="Separator">
-            <Setter Property="OverridesDefaultStyle" Value="true"/>
+        <Style x:Key="SakuraMenuSeparator"
+                TargetType="Separator">
+            <Setter Property="OverridesDefaultStyle"
+                    Value="true"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Separator">
-                        <Border Height="1" Background="#33F36895" Margin="0,5"/>
+                        <Border Height="1"
+                                Background="#33F36895"
+                                Margin="0,5"/>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <Style x:Key="SakuraMenuItem" TargetType="MenuItem">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#E2D4E6"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="OverridesDefaultStyle" Value="true"/>
+        <Style x:Key="SakuraMenuItem"
+                TargetType="MenuItem">
+            <Setter Property="Background"
+                    Value="Transparent"/>
+            <Setter Property="Foreground"
+                    Value="#E2D4E6"/>
+            <Setter Property="FontSize"
+                    Value="13"/>
+            <Setter Property="Padding"
+                    Value="10,8"/>
+            <Setter Property="Cursor"
+                    Value="Hand"/>
+            <Setter Property="OverridesDefaultStyle"
+                    Value="true"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="MenuItem">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="4">
-                            <ContentPresenter ContentSource="Header" Margin="{TemplateBinding Padding}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4">
+                            <ContentPresenter ContentSource="Header"
+                                    Margin="{TemplateBinding Padding}"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#F36895"/>
-                                <Setter Property="Foreground" Value="White"/>
+                            <Trigger Property="IsMouseOver"
+                                    Value="True">
+                                <Setter TargetName="border"
+                                        Property="Background"
+                                        Value="#F36895"/>
+                                <Setter Property="Foreground"
+                                        Value="White"/>
                             </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.5"/>
+                            <Trigger Property="IsEnabled"
+                                    Value="False">
+                                <Setter Property="Opacity"
+                                        Value="0.5"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -144,26 +228,42 @@
             </Setter>
         </Style>
 
-        <Style x:Key="UninstallMenuItemStyle" TargetType="MenuItem" BasedOn="{StaticResource SakuraMenuItem}">
-            <Setter Property="Foreground" Value="#FF4D4D"/>
-            <Setter Property="FontWeight" Value="Bold"/>
+        <Style x:Key="UninstallMenuItemStyle"
+                TargetType="MenuItem"
+                BasedOn="{StaticResource SakuraMenuItem}">
+            <Setter Property="Foreground"
+                    Value="#FF4D4D"/>
+            <Setter Property="FontWeight"
+                    Value="Bold"/>
             <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Foreground" Value="White"/>
+                <Trigger Property="IsMouseOver"
+                        Value="True">
+                    <Setter Property="Foreground"
+                            Value="White"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <Style x:Key="SakuraContextMenu" TargetType="ContextMenu">
-            <Setter Property="Background" Value="#1A0D1F"/>
-            <Setter Property="BorderBrush" Value="#4DF36895"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="5"/>
-            <Setter Property="OverridesDefaultStyle" Value="true"/>
+        <Style x:Key="SakuraContextMenu"
+                TargetType="ContextMenu">
+            <Setter Property="Background"
+                    Value="#1A0D1F"/>
+            <Setter Property="BorderBrush"
+                    Value="#4DF36895"/>
+            <Setter Property="BorderThickness"
+                    Value="1"/>
+            <Setter Property="Padding"
+                    Value="5"/>
+            <Setter Property="OverridesDefaultStyle"
+                    Value="true"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ContextMenu">
-                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
                             <ItemsPresenter KeyboardNavigation.TabNavigation="Cycle"/>
                         </Border>
                     </ControlTemplate>
@@ -171,22 +271,36 @@
             </Setter>
         </Style>
 
-        <ContextMenu x:Key="TrayContextMenu" Style="{StaticResource SakuraContextMenu}">
-            <MenuItem Header="{Binding Lang[menuTrayRestore]}" Style="{StaticResource SakuraMenuItem}" Click="TrayMenuRestore_Click"/>
+        <ContextMenu x:Key="TrayContextMenu"
+                Style="{StaticResource SakuraContextMenu}">
+            <MenuItem Header="{Binding Lang[menuTrayRestore]}"
+                    Style="{StaticResource SakuraMenuItem}"
+                    Click="TrayMenuRestore_Click"/>
             <Separator Style="{StaticResource SakuraMenuSeparator}"/>
-            <MenuItem Header="{Binding Lang[menuTrayExit]}" Style="{StaticResource UninstallMenuItemStyle}" Click="TrayMenuExit_Click"/>
+            <MenuItem Header="{Binding Lang[menuTrayExit]}"
+                    Style="{StaticResource UninstallMenuItemStyle}"
+                    Click="TrayMenuExit_Click"/>
         </ContextMenu>
 
-        <Style x:Key="ScrollBarThumb" TargetType="Thumb">
-            <Setter Property="OverridesDefaultStyle" Value="true"/>
-            <Setter Property="IsTabStop" Value="false"/>
+        <Style x:Key="ScrollBarThumb"
+                TargetType="Thumb">
+            <Setter Property="OverridesDefaultStyle"
+                    Value="true"/>
+            <Setter Property="IsTabStop"
+                    Value="false"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Thumb">
-                        <Border x:Name="rectangle" CornerRadius="3" Background="#F36895" Width="6"/>
+                        <Border x:Name="rectangle"
+                                CornerRadius="3"
+                                Background="#F36895"
+                                Width="6"/>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="true">
-                                <Setter TargetName="rectangle" Property="Background" Value="#FA8EB1"/>
+                            <Trigger Property="IsMouseOver"
+                                    Value="true">
+                                <Setter TargetName="rectangle"
+                                        Property="Background"
+                                        Value="#FA8EB1"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -194,15 +308,24 @@
             </Setter>
         </Style>
 
-        <Style x:Key="SakuraScroll" TargetType="ScrollBar">
-            <Setter Property="Width" Value="8"/>
-            <Setter Property="OverridesDefaultStyle" Value="true"/>
+        <Style x:Key="SakuraScroll"
+                TargetType="ScrollBar">
+            <Setter Property="Width"
+                    Value="8"/>
+            <Setter Property="OverridesDefaultStyle"
+                    Value="true"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ScrollBar">
-                        <Grid x:Name="Bg" SnapsToDevicePixels="true" Background="Transparent">
-                            <Border CornerRadius="3" Background="#20FFFFFF" Margin="1,0"/>
-                            <Track x:Name="PART_Track" IsDirectionReversed="true" IsEnabled="{TemplateBinding IsEnabled}">
+                        <Grid x:Name="Bg"
+                                SnapsToDevicePixels="true"
+                                Background="Transparent">
+                            <Border CornerRadius="3"
+                                    Background="#20FFFFFF"
+                                    Margin="1,0"/>
+                            <Track x:Name="PART_Track"
+                                    IsDirectionReversed="true"
+                                    IsEnabled="{TemplateBinding IsEnabled}">
                                 <Track.Thumb>
                                     <Thumb Style="{StaticResource ScrollBarThumb}"/>
                                 </Track.Thumb>
@@ -213,7 +336,8 @@
             </Setter>
         </Style>
 
-        <Style x:Key="SakuraScrollViewer" TargetType="ScrollViewer">
+        <Style x:Key="SakuraScrollViewer"
+                TargetType="ScrollViewer">
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ScrollViewer">
@@ -223,34 +347,59 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <ScrollContentPresenter Grid.Column="0"/>
-                            <ScrollBar x:Name="PART_VerticalScrollBar" Grid.Column="1" Value="{TemplateBinding VerticalOffset}" Maximum="{TemplateBinding ScrollableHeight}" ViewportSize="{TemplateBinding ViewportHeight}" Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" Style="{StaticResource SakuraScroll}"/>
+                            <ScrollBar x:Name="PART_VerticalScrollBar"
+                                    Grid.Column="1"
+                                    Value="{TemplateBinding VerticalOffset}"
+                                    Maximum="{TemplateBinding ScrollableHeight}"
+                                    ViewportSize="{TemplateBinding ViewportHeight}"
+                                    Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
+                                    Style="{StaticResource SakuraScroll}"/>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <Style x:Key="TopTabButton" TargetType="RadioButton">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#94A3B8"/>
-            <Setter Property="FontSize" Value="15"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Margin" Value="10,0"/>
+        <Style x:Key="TopTabButton"
+                TargetType="RadioButton">
+            <Setter Property="Background"
+                    Value="Transparent"/>
+            <Setter Property="Foreground"
+                    Value="#94A3B8"/>
+            <Setter Property="FontSize"
+                    Value="15"/>
+            <Setter Property="FontWeight"
+                    Value="Bold"/>
+            <Setter Property="Cursor"
+                    Value="Hand"/>
+            <Setter Property="Margin"
+                    Value="10,0"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
                         <Grid Background="Transparent">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,0"/>
-                            <Border x:Name="ActiveIndicator" Height="3" Background="#F36895" VerticalAlignment="Bottom" Visibility="Collapsed"/>
+                            <ContentPresenter HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Margin="10,0"/>
+                            <Border x:Name="ActiveIndicator"
+                                    Height="3"
+                                    Background="#F36895"
+                                    VerticalAlignment="Bottom"
+                                    Visibility="Collapsed"/>
                         </Grid>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                            <Trigger Property="IsMouseOver"
+                                    Value="True">
+                                <Setter Property="Foreground"
+                                        Value="#FFFFFF"/>
                             </Trigger>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter Property="Foreground" Value="#F36895"/>
-                                <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible"/>
+                            <Trigger Property="IsChecked"
+                                    Value="True">
+                                <Setter Property="Foreground"
+                                        Value="#F36895"/>
+                                <Setter TargetName="ActiveIndicator"
+                                        Property="Visibility"
+                                        Value="Visible"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -258,51 +407,92 @@
             </Setter>
         </Style>
 
-        <Style x:Key="SakuraProgressBar" TargetType="ProgressBar">
-            <Setter Property="Foreground" Value="#F36895"/>
-            <Setter Property="Background" Value="#33F36895"/>
-            <Setter Property="BorderThickness" Value="0"/>
+        <Style x:Key="SakuraProgressBar"
+                TargetType="ProgressBar">
+            <Setter Property="Foreground"
+                    Value="#F36895"/>
+            <Setter Property="Background"
+                    Value="#33F36895"/>
+            <Setter Property="BorderThickness"
+                    Value="0"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ProgressBar">
                         <Grid>
-                            <Border x:Name="PART_Track" Background="{TemplateBinding Background}" CornerRadius="4"/>
-                            <Border x:Name="PART_Indicator" Background="{TemplateBinding Foreground}" CornerRadius="4" HorizontalAlignment="Left"/>
+                            <Border x:Name="PART_Track"
+                                    Background="{TemplateBinding Background}"
+                                    CornerRadius="4"/>
+                            <Border x:Name="PART_Indicator"
+                                    Background="{TemplateBinding Foreground}"
+                                    CornerRadius="4"
+                                    HorizontalAlignment="Left"/>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <Style x:Key="PlayButton" TargetType="Button">
-            <Setter Property="Background" Value="#F2140A18"/>
-            <Setter Property="Foreground" Value="#F36895"/>
-            <Setter Property="BorderBrush" Value="#33F36895"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="FontSize" Value="24"/>
-            <Setter Property="Cursor" Value="Hand"/>
+        <Style x:Key="PlayButton"
+                TargetType="Button">
+            <Setter Property="Background"
+                    Value="#F2140A18"/>
+            <Setter Property="Foreground"
+                    Value="#F36895"/>
+            <Setter Property="BorderBrush"
+                    Value="#33F36895"/>
+            <Setter Property="BorderThickness"
+                    Value="1"/>
+            <Setter Property="FontWeight"
+                    Value="Bold"/>
+            <Setter Property="FontSize"
+                    Value="24"/>
+            <Setter Property="Cursor"
+                    Value="Hand"/>
+            <Setter Property="Tag">
+                <Setter.Value>
+                    <CornerRadius>4</CornerRadius>
+                </Setter.Value>
+            </Setter>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{TemplateBinding Tag}">
                             <Border.Effect>
-                                <DropShadowEffect Color="#F36895" BlurRadius="10" ShadowDepth="0" Opacity="0.2"/>
+                                <DropShadowEffect Color="#F36895"
+                                        BlurRadius="10"
+                                        ShadowDepth="0"
+                                        Opacity="0.2"/>
                             </Border.Effect>
                             <Grid>
-                                <Path Data="M 0,20 L 20,0 M 10,40 L 40,10" Stroke="#11F36895" StrokeThickness="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="10,0,0,10"/>
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Path Data="M 0,20 L 20,0 M 10,40 L 40,10"
+                                        Stroke="#11F36895"
+                                        StrokeThickness="2"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Bottom"
+                                        Margin="10,0,0,10"/>
+                                <ContentPresenter HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#F36895"/>
-                                <Setter Property="Foreground" Value="#FFFFFF"/>
-                                <Setter Property="BorderBrush" Value="#FFFFFF"/>
+                            <Trigger Property="IsMouseOver"
+                                    Value="True">
+                                <Setter Property="Background"
+                                        Value="#F36895"/>
+                                <Setter Property="Foreground"
+                                        Value="#FFFFFF"/>
+                                <Setter Property="BorderBrush"
+                                        Value="#FFFFFF"/>
                             </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.5"/>
-                                <Setter Property="Cursor" Value="Wait"/>
+                            <Trigger Property="IsEnabled"
+                                    Value="False">
+                                <Setter Property="Opacity"
+                                        Value="0.5"/>
+                                <Setter Property="Cursor"
+                                        Value="Wait"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -310,32 +500,57 @@
             </Setter>
         </Style>
 
-        <Style x:Key="ProfileSubTabButton" TargetType="RadioButton">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#94A3B8"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Padding" Value="15,12"/>
-            <Setter Property="Margin" Value="0,0,0,8"/>
-            <Setter Property="Cursor" Value="Hand"/>
+        <Style x:Key="ProfileSubTabButton"
+                TargetType="RadioButton">
+            <Setter Property="Background"
+                    Value="Transparent"/>
+            <Setter Property="Foreground"
+                    Value="#94A3B8"/>
+            <Setter Property="FontSize"
+                    Value="14"/>
+            <Setter Property="FontWeight"
+                    Value="Bold"/>
+            <Setter Property="Padding"
+                    Value="15,12"/>
+            <Setter Property="Margin"
+                    Value="0,0,0,8"/>
+            <Setter Property="Cursor"
+                    Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="6">
                             <Grid>
-                                <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                <Border x:Name="Indicator" Width="4" Background="#F36895" HorizontalAlignment="Left" CornerRadius="2" Visibility="Collapsed" Margin="0,8"/>
+                                <ContentPresenter Margin="{TemplateBinding Padding}"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"/>
+                                <Border x:Name="Indicator"
+                                        Width="4"
+                                        Background="#F36895"
+                                        HorizontalAlignment="Left"
+                                        CornerRadius="2"
+                                        Visibility="Collapsed"
+                                        Margin="0,8"/>
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#1AFFFFFF"/>
-                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                            <Trigger Property="IsMouseOver"
+                                    Value="True">
+                                <Setter Property="Background"
+                                        Value="#1AFFFFFF"/>
+                                <Setter Property="Foreground"
+                                        Value="#FFFFFF"/>
                             </Trigger>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter Property="Background" Value="#33F36895"/>
-                                <Setter Property="Foreground" Value="#F36895"/>
-                                <Setter TargetName="Indicator" Property="Visibility" Value="Visible"/>
+                            <Trigger Property="IsChecked"
+                                    Value="True">
+                                <Setter Property="Background"
+                                        Value="#33F36895"/>
+                                <Setter Property="Foreground"
+                                        Value="#F36895"/>
+                                <Setter TargetName="Indicator"
+                                        Property="Visibility"
+                                        Value="Visible"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -344,111 +559,175 @@
         </Style>
 
         <Style TargetType="TextBox">
-            <Setter Property="Background" Value="#4C000000"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#33F36895"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="5,0"/>
-            <Setter Property="Height" Value="42"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="CaretBrush" Value="#F36895"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Background"
+                    Value="#4C000000"/>
+            <Setter Property="Foreground"
+                    Value="White"/>
+            <Setter Property="BorderBrush"
+                    Value="#33F36895"/>
+            <Setter Property="BorderThickness"
+                    Value="1"/>
+            <Setter Property="Padding"
+                    Value="5,0"/>
+            <Setter Property="Height"
+                    Value="42"/>
+            <Setter Property="VerticalContentAlignment"
+                    Value="Center"/>
+            <Setter Property="CaretBrush"
+                    Value="#F36895"/>
+            <Setter Property="FontSize"
+                    Value="13"/>
         </Style>
 
         <Style TargetType="PasswordBox">
-            <Setter Property="Background" Value="#4C000000"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#33F36895"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="5,0"/>
-            <Setter Property="Height" Value="42"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="CaretBrush" Value="#F36895"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Background"
+                    Value="#4C000000"/>
+            <Setter Property="Foreground"
+                    Value="White"/>
+            <Setter Property="BorderBrush"
+                    Value="#33F36895"/>
+            <Setter Property="BorderThickness"
+                    Value="1"/>
+            <Setter Property="Padding"
+                    Value="5,0"/>
+            <Setter Property="Height"
+                    Value="42"/>
+            <Setter Property="VerticalContentAlignment"
+                    Value="Center"/>
+            <Setter Property="CaretBrush"
+                    Value="#F36895"/>
+            <Setter Property="FontSize"
+                    Value="13"/>
         </Style>
 
-        <Style x:Key="ProfileActionButton" TargetType="Button">
-            <Setter Property="Background" Value="#F36895"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Height" Value="42"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
+        <Style x:Key="ProfileActionButton"
+                TargetType="Button">
+            <Setter Property="Background"
+                    Value="#F36895"/>
+            <Setter Property="Foreground"
+                    Value="White"/>
+            <Setter Property="FontWeight"
+                    Value="Bold"/>
+            <Setter Property="Height"
+                    Value="42"/>
+            <Setter Property="BorderThickness"
+                    Value="0"/>
+            <Setter Property="Cursor"
+                    Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#FA8EB1"/>
+                <Trigger Property="IsMouseOver"
+                        Value="True">
+                    <Setter Property="Background"
+                            Value="#FA8EB1"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <Style x:Key="ProfileSecondaryActionButton" TargetType="Button">
-            <Setter Property="Background" Value="#33F36895"/>
-            <Setter Property="Foreground" Value="#F36895"/>
-            <Setter Property="BorderBrush" Value="#4DF36895"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Height" Value="42"/>
-            <Setter Property="Cursor" Value="Hand"/>
+        <Style x:Key="ProfileSecondaryActionButton"
+                TargetType="Button">
+            <Setter Property="Background"
+                    Value="#33F36895"/>
+            <Setter Property="Foreground"
+                    Value="#F36895"/>
+            <Setter Property="BorderBrush"
+                    Value="#4DF36895"/>
+            <Setter Property="BorderThickness"
+                    Value="1"/>
+            <Setter Property="FontWeight"
+                    Value="Bold"/>
+            <Setter Property="Height"
+                    Value="42"/>
+            <Setter Property="Cursor"
+                    Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#F36895"/>
-                    <Setter Property="Foreground" Value="White"/>
+                <Trigger Property="IsMouseOver"
+                        Value="True">
+                    <Setter Property="Background"
+                            Value="#F36895"/>
+                    <Setter Property="Foreground"
+                            Value="White"/>
                 </Trigger>
-                <Trigger Property="IsPressed" Value="True">
-                    <Setter Property="Background" Value="#D8547C"/>
+                <Trigger Property="IsPressed"
+                        Value="True">
+                    <Setter Property="Background"
+                            Value="#D8547C"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <Style x:Key="ProfileCancelButton" TargetType="Button">
-            <Setter Property="Background" Value="#33FF4D4D"/>
-            <Setter Property="Foreground" Value="#FF4D4D"/>
-            <Setter Property="BorderBrush" Value="#4DFF4D4D"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Height" Value="42"/>
-            <Setter Property="Cursor" Value="Hand"/>
+        <Style x:Key="ProfileCancelButton"
+                TargetType="Button">
+            <Setter Property="Background"
+                    Value="#33FF4D4D"/>
+            <Setter Property="Foreground"
+                    Value="#FF4D4D"/>
+            <Setter Property="BorderBrush"
+                    Value="#4DFF4D4D"/>
+            <Setter Property="BorderThickness"
+                    Value="1"/>
+            <Setter Property="FontWeight"
+                    Value="Bold"/>
+            <Setter Property="Height"
+                    Value="42"/>
+            <Setter Property="Cursor"
+                    Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#FF4D4D"/>
-                    <Setter Property="Foreground" Value="White"/>
+                <Trigger Property="IsMouseOver"
+                        Value="True">
+                    <Setter Property="Background"
+                            Value="#FF4D4D"/>
+                    <Setter Property="Foreground"
+                            Value="White"/>
                 </Trigger>
-                <Trigger Property="IsPressed" Value="True">
-                    <Setter Property="Background" Value="#CC0000"/>
+                <Trigger Property="IsPressed"
+                        Value="True">
+                    <Setter Property="Background"
+                            Value="#CC0000"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
     </Window.Resources>
 
     <Grid Background="#150B1A">
-        <Image Source="pack://application:,,,/Assets/bg.png" Stretch="UniformToFill"/>
+        <Image Source="pack://application:,,,/Assets/bg.png"
+                Stretch="UniformToFill"/>
         <Rectangle Fill="#B3000000"/>
 
         <Grid>
@@ -462,38 +741,89 @@
                 <ColumnDefinition Width="130"/>
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Row="0" Grid.ColumnSpan="2" Background="#800F0812" BorderBrush="#33F36895" BorderThickness="0,0,0,1">
+            <Border Grid.Row="0"
+                    Grid.ColumnSpan="2"
+                    Background="#800F0812"
+                    BorderBrush="#33F36895"
+                    BorderThickness="0,0,0,1">
                 <Grid>
-                    <Border Background="Transparent" MouseLeftButtonDown="TopBar_MouseLeftButtonDown"/>
-                    <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
-                        <TextBlock Text="OTONASHIREI" Foreground="White" FontSize="20" FontWeight="Black" VerticalAlignment="Center"/>
-                        <TextBlock Text=" MCSERVER" Foreground="#F36895" FontSize="20" FontWeight="Black" VerticalAlignment="Center" Margin="0,0,40,0"/>
-                        <RadioButton Content="{Binding Lang[radTabHome]}" Style="{StaticResource TopTabButton}" IsChecked="True" Checked="TabHome_Checked"/>
-                        <RadioButton Content="{Binding Lang[radTabProfile]}" Style="{StaticResource TopTabButton}" Checked="TabProfile_Checked"/>
-                        <RadioButton Content="{Binding Lang[radTabSettings]}" Style="{StaticResource TopTabButton}" Checked="TabSettings_Checked"/>
+                    <Border Background="Transparent"
+                            MouseLeftButtonDown="TopBar_MouseLeftButtonDown"/>
+                    <StackPanel Orientation="Horizontal"
+                            Margin="20,0,0,0">
+                        <TextBlock Text="OTONASHIREI"
+                                Foreground="White"
+                                FontSize="20"
+                                FontWeight="Black"
+                                VerticalAlignment="Center"/>
+                        <TextBlock Text=" MCSERVER"
+                                Foreground="#F36895"
+                                FontSize="20"
+                                FontWeight="Black"
+                                VerticalAlignment="Center"
+                                Margin="0,0,40,0"/>
+                        <RadioButton Content="{Binding Lang[radTabHome]}"
+                                Style="{StaticResource TopTabButton}"
+                                IsChecked="True"
+                                Checked="TabHome_Checked"/>
+                        <RadioButton Content="{Binding Lang[radTabProfile]}"
+                                Style="{StaticResource TopTabButton}"
+                                Checked="TabProfile_Checked"/>
+                        <RadioButton Content="{Binding Lang[radTabSettings]}"
+                                Style="{StaticResource TopTabButton}"
+                                Checked="TabSettings_Checked"/>
                     </StackPanel>
-                    
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
-                        <Button x:Name="btnUpdateClient" Content="{Binding Lang[btnUpdateClient]}" Margin="0,5,15,0" Padding="12,0" Height="28" Cursor="Hand" Visibility="Collapsed" VerticalAlignment="Center">
+
+                    <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top">
+                        <Button x:Name="btnUpdateClient"
+                                Content="{Binding Lang[btnUpdateClient]}"
+                                Command="{Binding UpdateClientCommand}"
+                                Visibility="{Binding IsUpdateAvailable, Converter={StaticResource BoolToVisConverter}}"
+                                Margin="0,5,15,0"
+                                Padding="12,0"
+                                Height="28"
+                                Cursor="Hand"
+                                VerticalAlignment="Center">
                             <Button.Style>
                                 <Style TargetType="Button">
-                                    <Setter Property="Foreground" Value="#F36895"/>
-                                    <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="FontSize" Value="11"/>
+                                    <Setter Property="Foreground"
+                                            Value="#F36895"/>
+                                    <Setter Property="FontWeight"
+                                            Value="Bold"/>
+                                    <Setter Property="FontSize"
+                                            Value="11"/>
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate TargetType="Button">
-                                                <Border x:Name="border" Background="#1AF36895" BorderBrush="#4DF36895" BorderThickness="1" CornerRadius="4">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                                                <Border x:Name="border"
+                                                        Background="#1AF36895"
+                                                        BorderBrush="#4DF36895"
+                                                        BorderThickness="1"
+                                                        CornerRadius="4">
+                                                    <ContentPresenter HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            Margin="{TemplateBinding Padding}"/>
                                                 </Border>
                                                 <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="border" Property="Background" Value="#F36895"/>
-                                                        <Setter TargetName="border" Property="BorderBrush" Value="#F36895"/>
-                                                        <Setter Property="Foreground" Value="White"/>
-                                                        <Setter TargetName="border" Property="Effect">
+                                                    <Trigger Property="IsMouseOver"
+                                                            Value="True">
+                                                        <Setter TargetName="border"
+                                                                Property="Background"
+                                                                Value="#F36895"/>
+                                                        <Setter TargetName="border"
+                                                                Property="BorderBrush"
+                                                                Value="#F36895"/>
+                                                        <Setter Property="Foreground"
+                                                                Value="White"/>
+                                                        <Setter TargetName="border"
+                                                                Property="Effect">
                                                             <Setter.Value>
-                                                                <DropShadowEffect Color="#F36895" BlurRadius="12" ShadowDepth="0" Opacity="0.6"/>
+                                                                <DropShadowEffect Color="#F36895"
+                                                                        BlurRadius="12"
+                                                                        ShadowDepth="0"
+                                                                        Opacity="0.6"/>
                                                             </Setter.Value>
                                                         </Setter>
                                                     </Trigger>
@@ -505,22 +835,34 @@
                             </Button.Style>
                         </Button>
 
-                        <Button Content="—" Width="40" Height="30" Cursor="Hand" Click="MinimizeButton_Click">
+                        <Button Content="—"
+                                Width="40"
+                                Height="30"
+                                Cursor="Hand"
+                                Click="MinimizeButton_Click">
                             <Button.Style>
                                 <Style TargetType="Button">
-                                    <Setter Property="Background" Value="Transparent"/>
-                                    <Setter Property="Foreground" Value="#94A3B8"/>
-                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Background"
+                                            Value="Transparent"/>
+                                    <Setter Property="Foreground"
+                                            Value="#94A3B8"/>
+                                    <Setter Property="BorderThickness"
+                                            Value="0"/>
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="{TemplateBinding Background}">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,2"/>
+                                                    <ContentPresenter HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            Margin="0,0,0,2"/>
                                                 </Border>
                                                 <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Background" Value="#F36895"/>
-                                                        <Setter Property="Foreground" Value="White"/>
+                                                    <Trigger Property="IsMouseOver"
+                                                            Value="True">
+                                                        <Setter Property="Background"
+                                                                Value="#F36895"/>
+                                                        <Setter Property="Foreground"
+                                                                Value="White"/>
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
@@ -530,22 +872,34 @@
                             </Button.Style>
                         </Button>
 
-                        <Button Content="✕" Width="40" Height="30" Cursor="Hand" Click="CloseButton_Click">
+                        <Button Content="✕"
+                                Width="40"
+                                Height="30"
+                                Cursor="Hand"
+                                Click="CloseButton_Click">
                             <Button.Style>
                                 <Style TargetType="Button">
-                                    <Setter Property="Background" Value="Transparent"/>
-                                    <Setter Property="Foreground" Value="#94A3B8"/>
-                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Background"
+                                            Value="Transparent"/>
+                                    <Setter Property="Foreground"
+                                            Value="#94A3B8"/>
+                                    <Setter Property="BorderThickness"
+                                            Value="0"/>
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="{TemplateBinding Background}">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,2"/>
+                                                    <ContentPresenter HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"
+                                                            Margin="0,0,0,2"/>
                                                 </Border>
                                                 <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Background" Value="#F36895"/>
-                                                        <Setter Property="Foreground" Value="White"/>
+                                                    <Trigger Property="IsMouseOver"
+                                                            Value="True">
+                                                        <Setter Property="Background"
+                                                                Value="#F36895"/>
+                                                        <Setter Property="Foreground"
+                                                                Value="White"/>
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
@@ -558,29 +912,63 @@
                 </Grid>
             </Border>
 
-            <Grid x:Name="ViewHome" Grid.Row="1" Grid.ColumnSpan="2" Visibility="Visible">
-                <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="30,30,0,0" Width="380" Height="340" Background="#990F0812" BorderBrush="#22F36895" BorderThickness="1" CornerRadius="6">
+            <Grid x:Name="ViewHome"
+                    Grid.Row="1"
+                    Grid.ColumnSpan="2"
+                    Visibility="Visible">
+                <Border HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        Margin="30,30,0,0"
+                        Width="380"
+                        Height="340"
+                        Background="#990F0812"
+                        BorderBrush="#22F36895"
+                        BorderThickness="1"
+                        CornerRadius="6">
                     <Grid Margin="15,15,5,15">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <StackPanel Grid.Row="0" Margin="0,0,0,12">
-                            <TextBlock Text="{Binding Lang[lblSyncServer]}" Foreground="#F36895" FontSize="14" FontWeight="Black"/>
-                            <TextBlock Text="{Binding TotalModsText}" Foreground="#94A3B8" FontSize="11" Margin="0,3,0,0"/>
+                        <StackPanel Grid.Row="0"
+                                Margin="0,0,0,12">
+                            <TextBlock Text="{Binding Lang[lblSyncServer]}"
+                                    Foreground="#F36895"
+                                    FontSize="14"
+                                    FontWeight="Black"/>
+                            <TextBlock Text="{Binding TotalModsText}"
+                                    Foreground="#94A3B8"
+                                    FontSize="11"
+                                    Margin="0,3,0,0"/>
                         </StackPanel>
-                        <ScrollViewer Grid.Row="1" Style="{StaticResource SakuraScrollViewer}" VerticalScrollBarVisibility="Auto">
+                        <ScrollViewer Grid.Row="1"
+                                Style="{StaticResource SakuraScrollViewer}"
+                                VerticalScrollBarVisibility="Auto">
                             <ItemsControl ItemsSource="{Binding ModsList}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border BorderBrush="#15F36895" BorderThickness="0,0,0,1" Padding="0,8" Margin="0,0,10,0">
+                                        <Border BorderBrush="#15F36895"
+                                                BorderThickness="0,0,0,1"
+                                                Padding="0,8"
+                                                Margin="0,0,10,0">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="Auto"/>
                                                     <ColumnDefinition Width="*"/>
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" Text="{Binding StatusIcon}" Foreground="{Binding StatusColor}" FontSize="12" FontWeight="Bold" VerticalAlignment="Center" Margin="5,0,12,0"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding FileName}" Foreground="#E2D4E6" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Grid.Column="0"
+                                                        Text="{Binding StatusIcon}"
+                                                        Foreground="{Binding StatusColor}"
+                                                        FontSize="12"
+                                                        FontWeight="Bold"
+                                                        VerticalAlignment="Center"
+                                                        Margin="5,0,12,0"/>
+                                                <TextBlock Grid.Column="1"
+                                                        Text="{Binding FileName}"
+                                                        Foreground="#E2D4E6"
+                                                        FontSize="12"
+                                                        VerticalAlignment="Center"
+                                                        TextTrimming="CharacterEllipsis"/>
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
@@ -589,50 +977,121 @@
                         </ScrollViewer>
                     </Grid>
                 </Border>
-                <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="30,0,0,20">
-                    <TextBlock Text="{Binding Lang[lblHello]}" Foreground="#BFA6C4" FontSize="16" FontWeight="SemiBold"/>
-                    <TextBlock Text="{Binding Username}" Foreground="White" FontSize="40" FontWeight="Black"/>
+                <StackPanel VerticalAlignment="Bottom"
+                        HorizontalAlignment="Left"
+                        Margin="30,0,0,20">
+                    <TextBlock Text="{Binding Lang[lblHello]}"
+                            Foreground="#BFA6C4"
+                            FontSize="16"
+                            FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding DisplayUsername}"
+                            Foreground="White"
+                            FontSize="40"
+                            FontWeight="Black"/>
                 </StackPanel>
             </Grid>
 
-            <Grid x:Name="ViewProfile" Grid.Row="1" Grid.ColumnSpan="2" Visibility="Collapsed" Margin="30,30,80,0">
+            <Grid x:Name="ViewProfile"
+                    Grid.Row="1"
+                    Grid.ColumnSpan="2"
+                    Visibility="Collapsed"
+                    Margin="30,30,80,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="230"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Background="#990F0812" BorderBrush="#22F36895" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,20,20">
+                <Border Grid.Column="0"
+                        Background="#990F0812"
+                        BorderBrush="#22F36895"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="10"
+                        Margin="0,0,20,20">
                     <StackPanel>
-                        <TextBlock Text="{Binding Lang[lblAccountSettings]}" Foreground="#BFA6C4" FontSize="12" FontWeight="Bold" Margin="10,10,0,15"/>
-                        <RadioButton Content="{Binding Lang[radSubTabInfo]}" Style="{StaticResource ProfileSubTabButton}" IsChecked="True" Checked="SubTabInfo_Checked"/>
-                        <RadioButton Content="{Binding Lang[radSubTabSkin]}" Style="{StaticResource ProfileSubTabButton}" Checked="SubTabSkin_Checked"/>
-                        <RadioButton Content="{Binding Lang[radSubTabEmail]}" Style="{StaticResource ProfileSubTabButton}" Checked="SubTabEmail_Checked"/>
-                        <RadioButton Content="{Binding Lang[radSubTabPassword]}" Style="{StaticResource ProfileSubTabButton}" Checked="SubTabPassword_Checked"/>
+                        <TextBlock Text="{Binding Lang[lblAccountSettings]}"
+                                Foreground="#BFA6C4"
+                                FontSize="12"
+                                FontWeight="Bold"
+                                Margin="10,10,0,15"/>
+                        <RadioButton Content="{Binding Lang[radSubTabInfo]}"
+                                Style="{StaticResource ProfileSubTabButton}"
+                                IsChecked="True"
+                                Checked="SubTabInfo_Checked"/>
+                        <RadioButton Content="{Binding Lang[radSubTabSkin]}"
+                                Style="{StaticResource ProfileSubTabButton}"
+                                Checked="SubTabSkin_Checked"/>
+                        <RadioButton Content="{Binding Lang[radSubTabEmail]}"
+                                Style="{StaticResource ProfileSubTabButton}"
+                                Checked="SubTabEmail_Checked"/>
+                        <RadioButton Content="{Binding Lang[radSubTabPassword]}"
+                                Style="{StaticResource ProfileSubTabButton}"
+                                Checked="SubTabPassword_Checked"/>
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="1" Background="#990F0812" BorderBrush="#22F36895" BorderThickness="1" CornerRadius="6" Padding="40" Margin="0,0,0,20">
+                <Border Grid.Column="1"
+                        Background="#990F0812"
+                        BorderBrush="#22F36895"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="40"
+                        Margin="0,0,0,20">
                     <Grid>
-                        <StackPanel x:Name="pnlProfileInfo" Visibility="Visible">
-                            <TextBlock Text="{Binding Lang[lblAccountInfoTitle]}" Foreground="#F36895" FontSize="22" FontWeight="Black" Margin="0,0,0,30"/>
+                        <StackPanel x:Name="pnlProfileInfo"
+                                Visibility="Visible">
+                            <TextBlock Text="{Binding Lang[lblAccountInfoTitle]}"
+                                    Foreground="#F36895"
+                                    FontSize="22"
+                                    FontWeight="Black"
+                                    Margin="0,0,0,30"/>
                             <Grid Margin="0,0,0,30">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Border Width="80" Height="80" CornerRadius="40" Background="#33F36895" BorderBrush="#F36895" BorderThickness="2">
+                                <Border Width="80"
+                                        Height="80"
+                                        CornerRadius="40"
+                                        Background="#33F36895"
+                                        BorderBrush="#F36895"
+                                        BorderThickness="2">
                                     <Grid>
-                                        <Grid.Clip><EllipseGeometry RadiusX="38" RadiusY="38" Center="38,38"/></Grid.Clip>
-                                        <TextBlock x:Name="txtDefaultAvatar" Text="🎮" FontSize="40" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        <Image x:Name="imgProfileAvatar" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                                        <Grid.Clip>
+                                            <EllipseGeometry RadiusX="38"
+                                                    RadiusY="38"
+                                                    Center="38,38"/>
+                                        </Grid.Clip>
+                                        <TextBlock x:Name="txtDefaultAvatar"
+                                                Text="🎮"
+                                                FontSize="40"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"/>
+                                        <Image Source="{Binding ProfileAvatar}"
+                                                Stretch="UniformToFill"
+                                                RenderOptions.BitmapScalingMode="NearestNeighbor"/>
                                     </Grid>
                                 </Border>
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="20,0,0,0">
-                                    <TextBlock Text="{Binding Username}" Foreground="White" FontSize="28" FontWeight="Black"/>
-                                    <TextBlock Text="{Binding Lang[lblMemberOf]}" Foreground="#4ADE80" FontSize="14" Margin="0,5,0,0"/>
+                                <StackPanel Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        Margin="20,0,0,0">
+                                    <TextBlock Text="{Binding DisplayUsername}"
+                                            Foreground="White"
+                                            FontSize="28"
+                                            FontWeight="Black"/>
+                                    <TextBlock Text="{Binding Lang[lblMemberOf]}"
+                                            Foreground="#4ADE80"
+                                            FontSize="14"
+                                            Margin="0,5,0,0"/>
                                 </StackPanel>
                             </Grid>
-                            <Border Background="#4C000000" BorderBrush="#33F36895" BorderThickness="1" CornerRadius="6" Padding="20" Width="380" HorizontalAlignment="Left">
+                            <Border Background="#4C000000"
+                                    BorderBrush="#33F36895"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Padding="20"
+                                    Width="380"
+                                    HorizontalAlignment="Left">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
@@ -643,22 +1102,63 @@
                                         <ColumnDefinition Width="150"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Lang[lblUsernameStr]}" Foreground="#BFA6C4" FontSize="14"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Username}" Foreground="White" FontSize="14" FontWeight="SemiBold"/>
-                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding Lang[lblStatusStr]}" Foreground="#BFA6C4" FontSize="14"/>
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Lang[lblStatusReady]}" Foreground="#4ADE80" FontSize="14" FontWeight="SemiBold"/>
+                                    <TextBlock Grid.Row="0"
+                                            Grid.Column="0"
+                                            Text="{Binding Lang[lblUsernameStr]}"
+                                            Foreground="#BFA6C4"
+                                            FontSize="14"/>
+                                    <TextBlock Grid.Row="0"
+                                            Grid.Column="1"
+                                            Text="{Binding Username}"
+                                            Foreground="White"
+                                            FontSize="14"
+                                            FontWeight="SemiBold"/>
+                                    <TextBlock Grid.Row="2"
+                                            Grid.Column="0"
+                                            Text="{Binding Lang[lblStatusStr]}"
+                                            Foreground="#BFA6C4"
+                                            FontSize="14"/>
+                                    <TextBlock Grid.Row="2"
+                                            Grid.Column="1"
+                                            Text="{Binding Lang[lblStatusReady]}"
+                                            Foreground="#4ADE80"
+                                            FontSize="14"
+                                            FontWeight="SemiBold"/>
                                 </Grid>
                             </Border>
                         </StackPanel>
                         <!-- ================= TRANG 2: ĐỔI SKIN ================= -->
-                        <StackPanel x:Name="pnlProfileSkin" Visibility="Collapsed" Width="380" HorizontalAlignment="Left">
-                            <TextBlock Text="{Binding Lang[lblChangeSkinTitle]}" Foreground="#F36895" FontSize="22" FontWeight="Black" Margin="0,0,0,25"/>
-                            <TextBlock Text="{Binding Lang[lblSkinFormat]}" Foreground="#BFA6C4" FontSize="13" Margin="0,0,0,15"/>
+                        <StackPanel x:Name="pnlProfileSkin"
+                                Visibility="Collapsed"
+                                Width="380"
+                                HorizontalAlignment="Left">
+                            <TextBlock Text="{Binding Lang[lblChangeSkinTitle]}"
+                                    Foreground="#F36895"
+                                    FontSize="22"
+                                    FontWeight="Black"
+                                    Margin="0,0,0,25"/>
+                            <TextBlock Text="{Binding Lang[lblSkinFormat]}"
+                                    Foreground="#BFA6C4"
+                                    FontSize="13"
+                                    Margin="0,0,0,15"/>
 
-                            <Border Width="120" Height="120" BorderBrush="#33F36895" BorderThickness="2" CornerRadius="8" Background="#4C000000" Margin="0,0,0,20" HorizontalAlignment="Left">
+                            <Border Width="120"
+                                    Height="120"
+                                    BorderBrush="#33F36895"
+                                    BorderThickness="2"
+                                    CornerRadius="8"
+                                    Background="#4C000000"
+                                    Margin="0,0,0,20"
+                                    HorizontalAlignment="Left">
                                 <Grid>
-                                    <TextBlock Text="?" FontSize="40" Foreground="#33F36895" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    <Image x:Name="imgSkinPreview" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                                    <TextBlock Text="?"
+                                            FontSize="40"
+                                            Foreground="#33F36895"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"/>
+                                    <Image x:Name="imgSkinPreview"
+                                            Stretch="Uniform"
+                                            RenderOptions.BitmapScalingMode="NearestNeighbor"/>
                                 </Grid>
                             </Border>
 
@@ -668,52 +1168,113 @@
                                     <ColumnDefinition Width="15"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Button x:Name="btnSelectSkin" Grid.Column="0" Content="{Binding Lang[btnSelectSkin]}" Command="{Binding SelectSkinCommand}" Style="{StaticResource ProfileSecondaryActionButton}"/>
-                                <Button x:Name="btnUploadSkin" Grid.Column="2" Content="{Binding Lang[btnUploadSkin]}" Command="{Binding UploadSkinCommand}" Style="{StaticResource ProfileSecondaryActionButton}"/>
+                                <Button x:Name="btnSelectSkin"
+                                        Grid.Column="0"
+                                        Content="{Binding Lang[btnSelectSkin]}"
+                                        Command="{Binding SelectSkinCommand}"
+                                        Style="{StaticResource ProfileSecondaryActionButton}"/>
+                                <Button x:Name="btnUploadSkin"
+                                        Grid.Column="2"
+                                        Content="{Binding Lang[btnUploadSkin]}"
+                                        Command="{Binding UploadSkinCommand}"
+                                        Style="{StaticResource ProfileSecondaryActionButton}"/>
                             </Grid>
                         </StackPanel>
 
                         <!-- ================= TRANG 3: ĐỔI EMAIL ================= -->
-                        <StackPanel x:Name="pnlProfileEmail" Visibility="Collapsed" Width="380" HorizontalAlignment="Left">
-                            <TextBlock Text="{Binding Lang[lblLinkEmailTitle]}" Foreground="#F36895" FontSize="22" FontWeight="Black" Margin="0,0,0,25"/>
+                        <StackPanel x:Name="pnlProfileEmail"
+                                Visibility="Collapsed"
+                                Width="380"
+                                HorizontalAlignment="Left">
+                            <TextBlock Text="{Binding Lang[lblLinkEmailTitle]}"
+                                    Foreground="#F36895"
+                                    FontSize="22"
+                                    FontWeight="Black"
+                                    Margin="0,0,0,25"/>
 
-                            <StackPanel x:Name="pnlEmailInput" Visibility="Visible">
-                                <TextBlock Text="{Binding Lang[lblNewEmailStr]}" Foreground="#BFA6C4" FontSize="13" Margin="0,0,0,8"/>
-                                <TextBox Text="{Binding NewEmail, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,20"/>
-                                <Button Content="{Binding Lang[btnSendEmailOtp]}" Command="{Binding SendEmailOtpCommand}" Style="{StaticResource ProfileSecondaryActionButton}" Margin="0,0,0,25"/>
+                            <StackPanel x:Name="pnlEmailInput"
+                                    Visibility="Visible">
+                                <TextBlock Text="{Binding Lang[lblNewEmailStr]}"
+                                        Foreground="#BFA6C4"
+                                        FontSize="13"
+                                        Margin="0,0,0,8"/>
+                                <TextBox Text="{Binding NewEmail, UpdateSourceTrigger=PropertyChanged}"
+                                        Margin="0,0,0,20"/>
+                                <Button Content="{Binding Lang[btnSendEmailOtp]}"
+                                        Command="{Binding SendEmailOtpCommand}"
+                                        Style="{StaticResource ProfileSecondaryActionButton}"
+                                        Margin="0,0,0,25"/>
                             </StackPanel>
 
-                            <StackPanel x:Name="pnlOtpVerify" Visibility="Collapsed">
-                                <TextBlock Text="{Binding Lang[lblEmailOtpStr]}" Foreground="#BFA6C4" FontSize="13" Margin="0,0,0,8"/>
-                                <TextBox Text="{Binding EmailOtp, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,20"/>
+                            <StackPanel x:Name="pnlOtpVerify"
+                                    Visibility="Collapsed">
+                                <TextBlock Text="{Binding Lang[lblEmailOtpStr]}"
+                                        Foreground="#BFA6C4"
+                                        FontSize="13"
+                                        Margin="0,0,0,8"/>
+                                <TextBox Text="{Binding EmailOtp, UpdateSourceTrigger=PropertyChanged}"
+                                        Margin="0,0,0,20"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="15"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <Button Grid.Column="0" Content="{Binding Lang[btnCancelEmailOtp]}" Command="{Binding CancelEmailOtpCommand}" Style="{StaticResource ProfileCancelButton}"/>
-                                    <Button Grid.Column="2" Content="{Binding Lang[btnConfirmEmailChange]}" Command="{Binding ConfirmEmailChangeCommand}" Style="{StaticResource ProfileSecondaryActionButton}"/>
+                                    <Button Grid.Column="0"
+                                            Content="{Binding Lang[btnCancelEmailOtp]}"
+                                            Command="{Binding CancelEmailOtpCommand}"
+                                            Style="{StaticResource ProfileCancelButton}"/>
+                                    <Button Grid.Column="2"
+                                            Content="{Binding Lang[btnConfirmEmailChange]}"
+                                            Command="{Binding ConfirmEmailChangeCommand}"
+                                            Style="{StaticResource ProfileSecondaryActionButton}"/>
                                 </Grid>
-                                <TextBlock Text="{Binding Lang[lblEmailOtpNote]}" Foreground="#4ADE80" FontSize="12" Margin="0,15,0,0" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding Lang[lblEmailOtpNote]}"
+                                        Foreground="#4ADE80"
+                                        FontSize="12"
+                                        Margin="0,15,0,0"
+                                        TextWrapping="Wrap"/>
                             </StackPanel>
                         </StackPanel>
 
                         <!-- ================= TRANG 4: ĐỔI MẬT KHẨU ================= -->
-                        <StackPanel x:Name="pnlProfilePassword" Visibility="Collapsed" Width="380" HorizontalAlignment="Left">
-                            <TextBlock Text="{Binding Lang[lblChangePassTitle]}" Foreground="#F36895" FontSize="22" FontWeight="Black" Margin="0,0,0,25"/>
+                        <StackPanel x:Name="pnlProfilePassword"
+                                Visibility="Collapsed"
+                                Width="380"
+                                HorizontalAlignment="Left">
+                            <TextBlock Text="{Binding Lang[lblChangePassTitle]}"
+                                    Foreground="#F36895"
+                                    FontSize="22"
+                                    FontWeight="Black"
+                                    Margin="0,0,0,25"/>
 
-                            <StackPanel x:Name="pnlPasswordInput" Visibility="Visible">
-                                <TextBlock Text="{Binding Lang[lblOldPassStr]}" Foreground="#BFA6C4" FontSize="13" Margin="0,0,0,8"/>
-                                <PasswordBox x:Name="txtOldPassword" Margin="0,0,0,20"/>
+                            <StackPanel x:Name="pnlPasswordInput"
+                                    Visibility="Visible">
+                                <TextBlock Text="{Binding Lang[lblOldPassStr]}"
+                                        Foreground="#BFA6C4"
+                                        FontSize="13"
+                                        Margin="0,0,0,8"/>
+                                <PasswordBox x:Name="txtOldPassword"
+                                        Margin="0,0,0,20"/>
 
-                                <TextBlock Text="{Binding Lang[lblNewPassStr]}" Foreground="#BFA6C4" FontSize="13" Margin="0,0,0,8"/>
-                                <PasswordBox x:Name="txtNewPassword" Margin="0,0,0,20"/>
+                                <TextBlock Text="{Binding Lang[lblNewPassStr]}"
+                                        Foreground="#BFA6C4"
+                                        FontSize="13"
+                                        Margin="0,0,0,8"/>
+                                <PasswordBox x:Name="txtNewPassword"
+                                        Margin="0,0,0,20"/>
 
-                                <TextBlock Text="{Binding Lang[lblConfirmPassStr]}" Foreground="#BFA6C4" FontSize="13" Margin="0,0,0,8"/>
-                                <PasswordBox x:Name="txtConfirmNewPassword" Margin="0,0,0,25"/>
+                                <TextBlock Text="{Binding Lang[lblConfirmPassStr]}"
+                                        Foreground="#BFA6C4"
+                                        FontSize="13"
+                                        Margin="0,0,0,8"/>
+                                <PasswordBox x:Name="txtConfirmNewPassword"
+                                        Margin="0,0,0,25"/>
 
-                                <Button Content="{Binding Lang[btnSendPasswordOtp]}" Command="{Binding SendPasswordOtpCommand}" Style="{StaticResource ProfileSecondaryActionButton}" Margin="0,0,0,25">
+                                <Button Content="{Binding Lang[btnSendPasswordOtp]}"
+                                        Command="{Binding SendPasswordOtpCommand}"
+                                        Style="{StaticResource ProfileSecondaryActionButton}"
+                                        Margin="0,0,0,25">
                                     <Button.CommandParameter>
                                         <!-- Dùng MultiBinding để gom 3 ô Password truyền ngầm vào ViewModel -->
                                         <MultiBinding Converter="{StaticResource ParamConverter}">
@@ -725,130 +1286,325 @@
                                 </Button>
                             </StackPanel>
 
-                            <StackPanel x:Name="pnlPasswordOtpVerify" Visibility="Collapsed">
-                                <TextBlock Text="{Binding Lang[lblPassOtpStr]}" Foreground="#BFA6C4" FontSize="13" Margin="0,0,0,8"/>
-                                <TextBox Text="{Binding PasswordOtp, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,20"/>
+                            <StackPanel x:Name="pnlPasswordOtpVerify"
+                                    Visibility="Collapsed">
+                                <TextBlock Text="{Binding Lang[lblPassOtpStr]}"
+                                        Foreground="#BFA6C4"
+                                        FontSize="13"
+                                        Margin="0,0,0,8"/>
+                                <TextBox Text="{Binding PasswordOtp, UpdateSourceTrigger=PropertyChanged}"
+                                        Margin="0,0,0,20"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="15"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <Button Grid.Column="0" Content="{Binding Lang[btnCancelPasswordOtp]}" Command="{Binding CancelPasswordOtpCommand}" Style="{StaticResource ProfileCancelButton}"/>
-                                    <Button Grid.Column="2" Content="{Binding Lang[btnConfirmPasswordChange]}" Command="{Binding ConfirmPasswordChangeCommand}" Style="{StaticResource ProfileSecondaryActionButton}">
+                                    <Button Grid.Column="0"
+                                            Content="{Binding Lang[btnCancelPasswordOtp]}"
+                                            Command="{Binding CancelPasswordOtpCommand}"
+                                            Style="{StaticResource ProfileCancelButton}"/>
+                                    <Button Grid.Column="2"
+                                            Content="{Binding Lang[btnConfirmPasswordChange]}"
+                                            Command="{Binding ConfirmPasswordChangeCommand}"
+                                            Style="{StaticResource ProfileSecondaryActionButton}">
                                         <Button.CommandParameter>
                                             <Binding ElementName="txtNewPassword"/>
                                         </Button.CommandParameter>
                                     </Button>
                                 </Grid>
-                                <TextBlock Text="{Binding Lang[lblPassOtpNote]}" Foreground="#4ADE80" FontSize="12" Margin="0,15,0,0" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding Lang[lblPassOtpNote]}"
+                                        Foreground="#4ADE80"
+                                        FontSize="12"
+                                        Margin="0,15,0,0"
+                                        TextWrapping="Wrap"/>
                             </StackPanel>
-                        </StackPanel>
-                        </Grid>
-                </Border>
-            </Grid>
-
-            <Grid x:Name="ViewSettings" Grid.Row="1" Grid.ColumnSpan="2" Visibility="Collapsed" Margin="30,30,80,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="230"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <Border Grid.Column="0" Background="#990F0812" BorderBrush="#22F36895" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,20,20">
-                    <StackPanel>
-                        <TextBlock Text="{Binding Lang[lblSettingsSidebarTitle]}" Foreground="#BFA6C4" FontSize="12" FontWeight="Bold" Margin="10,10,0,15"/>
-                        <RadioButton Content="{Binding Lang[radSubSetGeneral]}" Style="{StaticResource ProfileSubTabButton}" IsChecked="True" Checked="SubSetGeneral_Checked"/>
-                        <RadioButton Content="{Binding Lang[radSubSetGraphics]}" Style="{StaticResource ProfileSubTabButton}" Checked="SubSetGraphics_Checked"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Grid.Column="1" Background="#990F0812" BorderBrush="#22F36895" BorderThickness="1" CornerRadius="6" Padding="40" Margin="0,0,0,20">
-                    <Grid>
-                        <StackPanel x:Name="pnlSettingsGeneral" Visibility="Visible">
-                            <TextBlock Text="{Binding Lang[lblSettingsGeneralTitle]}" Foreground="#F36895" FontSize="22" FontWeight="Black" Margin="0,0,0,30"/>
-                            <TextBlock Text="{Binding Lang[lblLanguageStr]}" Foreground="#BFA6C4" FontSize="14" Margin="0,0,0,8"/>
-                            <Button Content="{Binding Lang[btnChangeLanguage]}" Command="{Binding ChangeLanguageCommand}" Style="{StaticResource ProfileSecondaryActionButton}" HorizontalAlignment="Left" Width="300" Margin="0,0,0,30"/>
-                            
-                            <TextBlock Text="{Binding Lang[lblCloseActionStr]}" Foreground="#BFA6C4" FontSize="14" Margin="0,0,0,8"/>
-                            <StackPanel Margin="0,0,0,30">
-                                <RadioButton Content="{Binding Lang[radCloseMode1]}" 
-                                             IsChecked="{Binding IsCloseMode1}" 
-                                             Style="{StaticResource SakuraRadioButtonStyle}" 
-                                             Foreground="#BFA6C4" Margin="0,0,0,12"/>
-                                
-                                <RadioButton Content="{Binding Lang[radCloseMode2]}" 
-                                             IsChecked="{Binding IsCloseMode2}" 
-                                             Style="{StaticResource SakuraRadioButtonStyle}" 
-                                             Foreground="#BFA6C4"/>
-                            </StackPanel>
-
-                            <TextBlock Text="{Binding Lang[lblLogoutStr]}" Foreground="#BFA6C4" FontSize="14" Margin="0,0,0,8"/>
-                            <Button Content="{Binding Lang[btnLogoutApp]}" Command="{Binding LogoutCommand}" Style="{StaticResource ProfileCancelButton}" HorizontalAlignment="Left" Width="300"/>
-                        </StackPanel>
-
-                        <StackPanel x:Name="pnlSettingsGraphics" Visibility="Collapsed">
-                            <TextBlock Text="{Binding Lang[lblSettingsGraphicsTitle]}" Foreground="#F36895" FontSize="22" FontWeight="Black" Margin="0,0,0,30"/>
-                            <Grid Margin="0,0,0,8" Width="300" HorizontalAlignment="Left">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="{Binding Lang[lblRamStr]}" Foreground="#BFA6C4" FontSize="14" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding AllocatedRam, StringFormat='{}{0} MB'}" Foreground="#F36895" FontSize="14" FontWeight="Bold" Grid.Column="1" VerticalAlignment="Center"/>
-                            </Grid>
-                            <Slider Value="{Binding AllocatedRam, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Left" IsSnapToTickEnabled="True" Margin="0,0,0,30" Maximum="16384" Minimum="1024" Style="{StaticResource SakuraSliderStyle}" TickFrequency="1024" Width="300"/>
-
-                            <TextBlock Text="{Binding Lang[lblShaderStr]}" Foreground="#BFA6C4" FontSize="14" Margin="0,0,0,8"/>
-                            <Button Content="{Binding Lang[btnAddShader]}" Command="{Binding AddShaderCommand}" Style="{StaticResource ProfileSecondaryActionButton}" HorizontalAlignment="Left" Width="300" Margin="0,0,0,30"/>
                         </StackPanel>
                     </Grid>
                 </Border>
             </Grid>
 
-            <Border Grid.Row="2" Grid.ColumnSpan="2" Background="#CC0F0812" BorderBrush="#33F36895" BorderThickness="0,1,0,0">
+            <Grid x:Name="ViewSettings"
+                    Grid.Row="1"
+                    Grid.ColumnSpan="2"
+                    Visibility="Collapsed"
+                    Margin="30,30,80,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="230"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0"
+                        Background="#990F0812"
+                        BorderBrush="#22F36895"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="10"
+                        Margin="0,0,20,20">
+                    <StackPanel>
+                        <TextBlock Text="{Binding Lang[lblSettingsSidebarTitle]}"
+                                Foreground="#BFA6C4"
+                                FontSize="12"
+                                FontWeight="Bold"
+                                Margin="10,10,0,15"/>
+                        <RadioButton Content="{Binding Lang[radSubSetGeneral]}"
+                                Style="{StaticResource ProfileSubTabButton}"
+                                IsChecked="True"
+                                Checked="SubSetGeneral_Checked"/>
+                        <RadioButton Content="{Binding Lang[radSubSetGraphics]}"
+                                Style="{StaticResource ProfileSubTabButton}"
+                                Checked="SubSetGraphics_Checked"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1"
+                        Background="#990F0812"
+                        BorderBrush="#22F36895"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="40"
+                        Margin="0,0,0,20">
+                    <Grid>
+                        <StackPanel x:Name="pnlSettingsGeneral"
+                                Visibility="Visible">
+                            <TextBlock Text="{Binding Lang[lblSettingsGeneralTitle]}"
+                                    Foreground="#F36895"
+                                    FontSize="22"
+                                    FontWeight="Black"
+                                    Margin="0,0,0,30"/>
+                            <TextBlock Text="{Binding Lang[lblLanguageStr]}"
+                                    Foreground="#BFA6C4"
+                                    FontSize="14"
+                                    Margin="0,0,0,8"/>
+                            <Button Content="{Binding Lang[btnChangeLanguage]}"
+                                    Command="{Binding ChangeLanguageCommand}"
+                                    Style="{StaticResource ProfileSecondaryActionButton}"
+                                    HorizontalAlignment="Left"
+                                    Width="300"
+                                    Margin="0,0,0,30"/>
+
+                            <TextBlock Text="{Binding Lang[lblCloseActionStr]}"
+                                    Foreground="#BFA6C4"
+                                    FontSize="14"
+                                    Margin="0,0,0,8"/>
+                            <StackPanel Margin="0,0,0,30">
+                                <RadioButton Content="{Binding Lang[radCloseMode1]}"
+                                             IsChecked="{Binding IsCloseMode1}"
+                                             Style="{StaticResource SakuraRadioButtonStyle}"
+                                             Foreground="#BFA6C4"
+                                        Margin="0,0,0,12"/>
+
+                                <RadioButton Content="{Binding Lang[radCloseMode2]}"
+                                             IsChecked="{Binding IsCloseMode2}"
+                                             Style="{StaticResource SakuraRadioButtonStyle}"
+                                             Foreground="#BFA6C4"/>
+                            </StackPanel>
+
+                            <TextBlock Text="{Binding Lang[lblLogoutStr]}"
+                                    Foreground="#BFA6C4"
+                                    FontSize="14"
+                                    Margin="0,0,0,8"/>
+                            <Button Content="{Binding Lang[btnLogoutApp]}"
+                                    Command="{Binding LogoutCommand}"
+                                    Style="{StaticResource ProfileCancelButton}"
+                                    HorizontalAlignment="Left"
+                                    Width="300"/>
+                        </StackPanel>
+
+                        <StackPanel x:Name="pnlSettingsGraphics"
+                                Visibility="Collapsed">
+                            <TextBlock Text="{Binding Lang[lblSettingsGraphicsTitle]}"
+                                    Foreground="#F36895"
+                                    FontSize="22"
+                                    FontWeight="Black"
+                                    Margin="0,0,0,30"/>
+
+                            <Grid Margin="0,0,0,8"
+                                    Width="300"
+                                    HorizontalAlignment="Left">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Lang[lblRamStr]}"
+                                        Foreground="#BFA6C4"
+                                        FontSize="14"
+                                        VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding AllocatedRam, StringFormat='{}{0} MB'}"
+                                        Foreground="#F36895"
+                                        FontSize="14"
+                                        FontWeight="Bold"
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"/>
+                            </Grid>
+                            <Slider Value="{Binding AllocatedRam, UpdateSourceTrigger=PropertyChanged}"
+                                    HorizontalAlignment="Left"
+                                    IsSnapToTickEnabled="True"
+                                    Margin="0,0,0,25"
+                                    Maximum="16384"
+                                    Minimum="1024"
+                                    Style="{StaticResource SakuraSliderStyle}"
+                                    TickFrequency="1024"
+                                    Width="300"/>
+
+                            <TextBlock Text="{Binding Lang[lblShaderStr]}"
+                                    Foreground="#BFA6C4"
+                                    FontSize="14"
+                                    Margin="0,0,0,8"/>
+                            <Button Content="{Binding Lang[btnAddShader]}"
+                                    Command="{Binding AddShaderCommand}"
+                                    Style="{StaticResource ProfileSecondaryActionButton}"
+                                    HorizontalAlignment="Left"
+                                    Width="300"
+                                    Margin="0,0,0,30"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <Border Grid.Row="2"
+                    Grid.ColumnSpan="2"
+                    Background="#CC0F0812"
+                    BorderBrush="#33F36895"
+                    BorderThickness="0,1,0,0">
                 <Grid Margin="20,15">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <Grid Grid.Column="0" VerticalAlignment="Center" Margin="10,0,40,0" Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVisConverter}}">
+                    <Grid Grid.Column="0"
+                            VerticalAlignment="Center"
+                            Margin="10,0,40,0"
+                            Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVisConverter}}">
                         <StackPanel>
                             <Grid Margin="0,0,0,8">
-                                <TextBlock Text="{Binding DownloadStatus}" Foreground="#BFA6C4" FontSize="13"/>
-                                <TextBlock Text="{Binding DownloadDetail}" Foreground="#94A3B8" FontSize="12" HorizontalAlignment="Right"/>
+                                <TextBlock Text="{Binding DownloadStatus}"
+                                        Foreground="#BFA6C4"
+                                        FontSize="13"/>
+                                <TextBlock Text="{Binding DownloadDetail}"
+                                        Foreground="#94A3B8"
+                                        FontSize="12"
+                                        HorizontalAlignment="Right"/>
                             </Grid>
-                            <ProgressBar Style="{StaticResource SakuraProgressBar}" Height="10" Maximum="{Binding MaxProgressValue}" Value="{Binding ProgressValue}"/>
-                            <TextBlock Text="{Binding DownloadPercentage}" Foreground="#F36895" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,5,0,0"/>
+                            <ProgressBar Style="{StaticResource SakuraProgressBar}"
+                                    Height="10"
+                                    Maximum="{Binding MaxProgressValue}"
+                                    Value="{Binding ProgressValue}"/>
+                            <TextBlock Text="{Binding DownloadPercentage}"
+                                    Foreground="#F36895"
+                                    FontSize="12"
+                                    FontWeight="Bold"
+                                    HorizontalAlignment="Right"
+                                    Margin="0,5,0,0"/>
                         </StackPanel>
                     </Grid>
 
-                    <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal">
-                        <StackPanel VerticalAlignment="Center" Margin="0,0,20,0" HorizontalAlignment="Right">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,8">
-                                <TextBlock Text="{Binding Lang[lblSaveAt]}" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding InstallPath}" Foreground="#E2D4E6" FontSize="11" MaxWidth="150" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip="{Binding InstallPath}"/>
-                                <Button Content="{Binding Lang[btnChangePath]}" Command="{Binding ChangePathCommand}" Foreground="#F36895" Background="Transparent" BorderThickness="0" FontSize="11" FontWeight="Bold" Margin="8,0,0,0" Cursor="Hand"/>
+                    <StackPanel Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                        <StackPanel VerticalAlignment="Center"
+                                Margin="0,0,20,0"
+                                HorizontalAlignment="Right">
+                            <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Right"
+                                    Margin="0,0,0,8">
+                                <TextBlock Text="{Binding Lang[lblSaveAt]}"
+                                        Foreground="#94A3B8"
+                                        FontSize="11"
+                                        VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding InstallPath}"
+                                        Foreground="#E2D4E6"
+                                        FontSize="11"
+                                        MaxWidth="150"
+                                        TextTrimming="CharacterEllipsis"
+                                        VerticalAlignment="Center"
+                                        ToolTip="{Binding InstallPath}"/>
+                                <Button Content="{Binding Lang[btnChangePath]}"
+                                        Command="{Binding ChangePathCommand}"
+                                        Foreground="#F36895"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        FontSize="11"
+                                        FontWeight="Bold"
+                                        Margin="8,0,0,0"
+                                        Cursor="Hand"/>
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <TextBlock Text="{Binding VersionLabelText}" Foreground="#94A3B8" FontSize="12" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding GameVersionText}" Foreground="White" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Right">
+                                <TextBlock Text="{Binding VersionLabelText}"
+                                        Foreground="#94A3B8"
+                                        FontSize="12"
+                                        VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding GameVersionText}"
+                                        Foreground="White"
+                                        FontSize="14"
+                                        FontWeight="Bold"
+                                        VerticalAlignment="Center"/>
                             </StackPanel>
                         </StackPanel>
-                        
-                        <Grid Width="250" Height="80">
+
+                        <Grid Width="250"
+                                Height="80">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="200"/>
-                                <ColumnDefinition Width="50"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <Button Content="{Binding PlayButtonContent}" Command="{Binding PlayCommand}" Grid.Column="0" Style="{StaticResource PlayButton}"/>
-                            <Button Content="≡" Grid.Column="1" Style="{StaticResource PlayButton}" Click="btnGameMenu_Click">
+
+                            <Button Content="{Binding PlayButtonContent}"
+                                    Command="{Binding PlayCommand}"
+                                    Grid.Column="0">
+                                <Button.Style>
+                                    <Style TargetType="Button"
+                                            BasedOn="{StaticResource PlayButton}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsGameInstalled}"
+                                                    Value="True">
+                                                <Setter Property="BorderThickness"
+                                                        Value="1,1,0,1"/>
+                                                <Setter Property="Tag">
+                                                    <Setter.Value>
+                                                        <CornerRadius>4,0,0,4</CornerRadius>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+
+                            <Button Content="≡"
+                                    Grid.Column="1"
+                                    Width="55"
+                                    Click="btnGameMenu_Click"
+                                    Visibility="{Binding IsGameInstalled, Converter={StaticResource BoolToVisConverter}}">
+                                <Button.Style>
+                                    <Style TargetType="Button"
+                                            BasedOn="{StaticResource PlayButton}">
+                                        <Setter Property="BorderThickness"
+                                                Value="1"/>
+                                        <Setter Property="Tag">
+                                            <Setter.Value>
+                                                <CornerRadius>0,4,4,0</CornerRadius>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Style>
                                 <Button.ContextMenu>
-                                    <ContextMenu Style="{StaticResource SakuraContextMenu}">
-                                        <MenuItem Header="{Binding Lang[menuOpenFolder]}" Command="{Binding OpenFolderCommand}" Style="{StaticResource SakuraMenuItem}"/>
-                                        <MenuItem Header="{Binding Lang[menuVerify]}" Command="{Binding VerifyFilesCommand}" Style="{StaticResource SakuraMenuItem}"/>
+                                    <ContextMenu Style="{StaticResource SakuraContextMenu}"
+                                                 DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+
+                                        <MenuItem Header="{Binding Lang[menuOpenFolder]}"
+                                                Command="{Binding OpenFolderCommand}"
+                                                Style="{StaticResource SakuraMenuItem}"/>
+                                        <MenuItem Header="{Binding Lang[menuVerify]}"
+                                                Command="{Binding VerifyFilesCommand}"
+                                                Style="{StaticResource SakuraMenuItem}"/>
                                         <Separator Style="{StaticResource SakuraMenuSeparator}"/>
-                                        <MenuItem Header="{Binding Lang[menuUninstall]}" Command="{Binding UninstallGameCommand}" Style="{StaticResource UninstallMenuItemStyle}"/>
+                                        <MenuItem Header="{Binding Lang[menuUninstall]}"
+                                                Command="{Binding UninstallGameCommand}"
+                                                Style="{StaticResource UninstallMenuItemStyle}"/>
                                     </ContextMenu>
                                 </Button.ContextMenu>
                             </Button>

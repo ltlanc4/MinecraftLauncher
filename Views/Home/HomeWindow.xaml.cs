@@ -25,12 +25,19 @@ namespace MinecraftLauncher
             _viewModel = new HomeViewModel(username);
             this.DataContext = _viewModel;
 
-            // Đăng ký nhận sự kiện từ bộ não ViewModel
             _viewModel.OnShowConfirmDialog += ViewModel_OnShowConfirmDialog;
             _viewModel.OnRequestCloseOrHide += ViewModel_OnRequestCloseOrHide;
+            
+            _viewModel.OnRequestHideToTray += ViewModel_OnRequestHideToTray;
+            
             _viewModel.OnLogout += ViewModel_OnLogout;
 
             InitializeNotifyIcon();
+        }
+
+        private void ViewModel_OnRequestHideToTray()
+        {
+            HideToTray();
         }
 
         private void ViewModel_OnShowConfirmDialog(string titleKey, string descKey, string confirmKey, string cancelKey)
@@ -84,17 +91,31 @@ namespace MinecraftLauncher
 
         private void InitializeNotifyIcon()
         {
-            _notifyIcon = new System.Windows.Forms.NotifyIcon { Text = "OtonashiRei MC Server", Visible = false };
-            try { _notifyIcon.Icon = System.Drawing.Icon.ExtractAssociatedIcon(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName); } catch { _notifyIcon.Icon = System.Drawing.SystemIcons.Application; }
+            _notifyIcon = new System.Windows.Forms.NotifyIcon();
+            _notifyIcon.Text = "OtonashiRei MCServer";
+            _notifyIcon.Visible = false;
 
-            _notifyIcon.MouseUp += (s, e) => {
-                if (e.Button == System.Windows.Forms.MouseButtons.Left) RestoreFromTray();
-                else if (e.Button == System.Windows.Forms.MouseButtons.Right) {
-                    ContextMenu trayMenu = (ContextMenu)this.FindResource("TrayContextMenu");
-                    trayMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.MousePoint;
-                    trayMenu.IsOpen = true;
-                    var hwndSource = PresentationSource.FromVisual(trayMenu) as System.Windows.Interop.HwndSource;
-                    if (hwndSource != null) SetForegroundWindow(hwndSource.Handle);
+            // Nạp icon an toàn
+            try {
+                var iconStream = Application.GetResourceStream(new Uri("pack://application:,,,/Assets/icon.ico"))?.Stream;
+                _notifyIcon.Icon = iconStream != null ? new Icon(iconStream) : SystemIcons.Application;
+            } catch { _notifyIcon.Icon = SystemIcons.Application; }
+
+            // Click đúp chuột trái -> Mở lại Launcher
+            _notifyIcon.DoubleClick += (s, e) => RestoreFromTray();
+
+            // 🟢 KHÔI PHỤC CLICK CHUỘT PHẢI -> Mở Menu "Restore / Quit"
+            _notifyIcon.MouseClick += (s, e) =>
+            {
+                if (e.Button == System.Windows.Forms.MouseButtons.Right)
+                {
+                    ContextMenu menu = (ContextMenu)this.FindResource("TrayContextMenu");
+                    
+                    // 🟢 THÊM DÒNG NÀY: Truyền thẳng bộ não của Window sang cho Menu
+                    menu.DataContext = this.DataContext; 
+                    
+                    menu.IsOpen = true;
+                    this.Activate(); 
                 }
             };
         }

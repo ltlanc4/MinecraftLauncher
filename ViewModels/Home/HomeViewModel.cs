@@ -1,12 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -14,11 +10,14 @@ using CmlLib.Core;
 using CmlLib.Core.Auth;
 using DotNetEnv;
 using Microsoft.Win32;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace MinecraftLauncher.ViewModels
 {
     public class HomeViewModel : ViewModelBase
     {
+        private const string CURRENT_VERSION = "1.0.2";
         private static readonly HttpClient _httpClient = new HttpClient();
         private readonly string _appDataFolder;
         private readonly string _settingsFile;
@@ -48,6 +47,8 @@ namespace MinecraftLauncher.ViewModels
         private int _activeGamePid = -1;
         private Dictionary<string, string> _langDict = new Dictionary<string, string>();
         private ServerInfoResponse _serverManifest;
+        
+        private ImageSource _profileAvatar;
 
         public event Action<string, string, string, string> OnShowConfirmDialog;
         public event Action OnRequestCloseOrHide;
@@ -64,8 +65,19 @@ namespace MinecraftLauncher.ViewModels
             }
         }
 
+        private bool _isGameInstalled = false;
+        public bool IsGameInstalled
+        {
+            get => _isGameInstalled;
+            set => SetProperty(ref _isGameInstalled, value);
+        }
+
+        private bool _isInstalling = false;
+
+
         #region Các thuộc tính Binding
         public string Username { get => _username; set => SetProperty(ref _username, value); }
+        public string DisplayUsername => Username?.ToUpper();
         public string GameVersionText { get => _gameVersionText; set => SetProperty(ref _gameVersionText, value); }
         public string TotalModsText { get => _totalModsText; set => SetProperty(ref _totalModsText, value); }
         public string DownloadStatus { get => _downloadStatus; set => SetProperty(ref _downloadStatus, value); }
@@ -78,6 +90,12 @@ namespace MinecraftLauncher.ViewModels
         public string PlayButtonContent { get => _playButtonContent; set => SetProperty(ref _playButtonContent, value); }
         public string VersionLabelText { get => _versionLabelText; set => SetProperty(ref _versionLabelText, value); }
         public string InstallPath { get => _installPath; set => SetProperty(ref _installPath, value); }
+        
+        public ImageSource ProfileAvatar
+        {
+            get => _profileAvatar;
+            set => SetProperty(ref _profileAvatar, value);
+        }
 
         public int AllocatedRam
         {
@@ -114,7 +132,37 @@ namespace MinecraftLauncher.ViewModels
             set { if (value) CloseMode = 2; }
         }
 
+        // Sự kiện thông báo cho View ẩn xuống System Tray độc lập
+        public event Action OnRequestHideToTray;
+
+        private bool _isFullscreen = false;
+        private bool _isMaximize = false;
+
+        public bool IsFullscreen
+        {
+            get => _isFullscreen;
+            set { if (SetProperty(ref _isFullscreen, value)) SaveSettingItem("IsFullscreen", value); }
+        }
+
+        public bool IsMaximize
+        {
+            get => _isMaximize;
+            set { if (SetProperty(ref _isMaximize, value)) SaveSettingItem("IsMaximize", value); }
+        }
+
         public ObservableCollection<ModStatusItem> ModsList { get; } = new ObservableCollection<ModStatusItem>();
+
+        private bool _isUpdateAvailable = false;
+        public bool IsUpdateAvailable
+        {
+            get => _isUpdateAvailable;
+            set => SetProperty(ref _isUpdateAvailable, value);
+        }
+
+        // Lưu trữ thông tin bản cập nhật để truyền cho UpdateWindow
+        private string _updateDownloadUrl = "";
+        private string _newVersionName = "";
+
         #endregion
 
         #region Commands
@@ -126,11 +174,12 @@ namespace MinecraftLauncher.ViewModels
         public ICommand OpenFolderCommand { get; }
         public ICommand VerifyFilesCommand { get; }
         public ICommand UninstallGameCommand { get; }
+        public ICommand UpdateClientCommand { get; }
         #endregion
 
         public HomeViewModel(string username)
         {
-            Username = username.ToUpper();
+            Username = username;
 
             _appDataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MinecraftLauncher");
             _settingsFile = Path.Combine(_appDataFolder, "launcher_settings.json");
@@ -146,9 +195,98 @@ namespace MinecraftLauncher.ViewModels
             OpenFolderCommand = new RelayCommand((p) => ExecuteOpenFolder());
             VerifyFilesCommand = new RelayCommand(async (p) => await ExecuteVerifyFiles());
             UninstallGameCommand = new RelayCommand((p) => ExecuteUninstallGame());
+            UpdateClientCommand = new RelayCommand((p) => ExecuteUpdateClient());
 
             LoadLauncherSettings();
             InitializeAutoSync();
+        }
+
+        // 1. HÀM GỌI API KIỂM TRA PHIÊN BẢN 
+        private async Task CheckForLauncherUpdate()
+        {
+            try
+            {
+                // Gọi đúng API Endpoint của bạn
+                HttpResponseMessage response = await _httpClient.GetAsync($"{_apiUrl}/auth/launcher-version");
+                if (response.IsSuccessStatusCode)
+                {
+                    string json = await response.Content.ReadAsStringAsync();
+                    var updateInfo = JsonSerializer.Deserialize<UpdateInfo>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    if (updateInfo != null && !string.IsNullOrEmpty(updateInfo.Version))
+                    {
+                        updateInfo.Version = updateInfo.Version.Replace(".zip", "", StringComparison.OrdinalIgnoreCase);
+
+                        if (IsServerVersionNewer(updateInfo.Version, CURRENT_VERSION))
+                        {
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                // Bật cờ cho nút Update hiện lên
+                                IsUpdateAvailable = true;
+                                _updateDownloadUrl = updateInfo.DownloadUrl;
+                                _newVersionName = updateInfo.Version;
+                            });
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        // 2. THUẬT TOÁN ĐỌ HASH & HOTFIX XỊN XÒ CỦA BẠN (Giữ nguyên 100%)
+        private bool IsServerVersionNewer(string serverVer, string clientVer)
+        {
+            if (string.IsNullOrWhiteSpace(serverVer) || string.IsNullOrWhiteSpace(clientVer)) return false;
+
+            serverVer = serverVer.TrimStart('v', 'V').Trim();
+            clientVer = clientVer.TrimStart('v', 'V').Trim();
+
+            if (string.Equals(serverVer, clientVer, StringComparison.OrdinalIgnoreCase)) return false;
+
+            string[] sParts = serverVer.Split(new char[] { '-' }, 2);
+            string[] cParts = clientVer.Split(new char[] { '-' }, 2);
+
+            if (Version.TryParse(sParts[0], out Version sVer) && Version.TryParse(cParts[0], out Version cVer))
+            {
+                var sNorm = new Version(sVer.Major, sVer.Minor, Math.Max(0, sVer.Build), Math.Max(0, sVer.Revision));
+                var cNorm = new Version(cVer.Major, cVer.Minor, Math.Max(0, cVer.Build), Math.Max(0, cVer.Revision));
+
+                if (sNorm > cNorm) return true;  
+                if (sNorm < cNorm) return false; 
+
+                string sSuffix = sParts.Length > 1 ? sParts[1] : "";
+                string cSuffix = cParts.Length > 1 ? cParts[1] : "";
+
+                if (sSuffix != "" && cSuffix == "") return true;
+                if (sSuffix == "" && cSuffix != "") return false;
+
+                return string.Compare(sSuffix, cSuffix, StringComparison.OrdinalIgnoreCase) > 0;
+            }
+            return serverVer != clientVer;
+        }
+
+        // 3. HÀNH ĐỘNG KHI NGƯỜI CHƠI BẤM NÚT CẬP NHẬT
+        private void ExecuteUpdateClient()
+        {
+            if (string.IsNullOrEmpty(_updateDownloadUrl)) return;
+
+            string title = this["msgUpdateAvailableTitle"];
+            string desc = string.Format(this["msgUpdateAvailableDesc"], _newVersionName);
+            string confirm = this["btnConfirm"];
+            string cancel = this["btnCancel"];
+
+            if (NotificationManager.ShowConfirm(title, desc, confirm, cancel))
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    // Mở cửa sổ Updater chuyên dụng của bạn và tắt sảnh chính
+                    var updater = new UpdateWindow(_updateDownloadUrl);
+                    updater.Show();
+                    
+                    if (Application.Current.MainWindow != null)
+                        Application.Current.MainWindow.Close();
+                });
+            }
         }
 
         // ĐỌC THỦ CÔNG .ENV ĐỂ ĐẢM BẢO KHÔNG BAO GIỜ MẤT KẾT NỐI API
@@ -184,7 +322,32 @@ namespace MinecraftLauncher.ViewModels
                 }
             }
 
-            _apiUrl = $"http://{ip ?? "127.0.0.1"}:{port ?? "3000"}";
+            _apiUrl = $"http://{ip}:{port}";
+        }
+
+        private bool IsMinecraftFullscreenEnabled()
+        {
+            try
+            {
+                // File options.txt nằm ngay trong thư mục gốc của bộ cài đặt Minecraft
+                string optionsPath = Path.Combine(InstallPath, "options.txt");
+                if (File.Exists(optionsPath))
+                {
+                    string[] lines = File.ReadAllLines(optionsPath);
+                    foreach (string line in lines)
+                    {
+                        // Tìm dòng cấu hình thuộc tính fullscreen
+                        if (line.StartsWith("fullscreen:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            string value = line.Split(':')[1].Trim();
+                            return bool.TryParse(value, out bool fs) && fs;
+                        }
+                    }
+                }
+            }
+            catch { }
+            // Mặc định trả về false nếu không tìm thấy file hoặc người chơi đang tắt Fullscreen
+            return false; 
         }
 
         private void LoadLauncherSettings()
@@ -200,12 +363,13 @@ namespace MinecraftLauncher.ViewModels
                     if (settings != null)
                     {
                         if (settings.TryGetValue("Language", out JsonElement lang)) isEnglish = lang.GetString() == "EN";
-                        if (settings.TryGetValue("AllocatedRam", out JsonElement ram))
-                            _allocatedRam = ram.ValueKind == JsonValueKind.Number ? ram.GetInt32() : int.Parse(ram.GetString() ?? "8192");
-
-                        if (settings.TryGetValue("CloseMode", out JsonElement mode))
-                            _closeMode = mode.ValueKind == JsonValueKind.Number ? mode.GetInt32() : int.Parse(mode.GetString() ?? "2");
+                        if (settings.TryGetValue("AllocatedRam", out JsonElement ram)) _allocatedRam = ram.GetInt32();
+                        if (settings.TryGetValue("CloseMode", out JsonElement mode)) _closeMode = mode.GetInt32();
                         if (settings.TryGetValue("InstallPath", out JsonElement path)) rawPath = path.GetString();
+                        
+                        // PHỤC HỒI ĐỌC CẤU HÌNH ĐỒ HỌA
+                        if (settings.TryGetValue("IsFullscreen", out JsonElement fs)) _isFullscreen = fs.GetBoolean();
+                        if (settings.TryGetValue("IsMaximize", out JsonElement mx)) _isMaximize = mx.GetBoolean();
                     }
                 }
                 catch { _allocatedRam = 8192; _closeMode = 2; }
@@ -214,7 +378,9 @@ namespace MinecraftLauncher.ViewModels
 
             OnPropertyChanged(nameof(AllocatedRam));
             OnPropertyChanged(nameof(CloseMode));
-
+            OnPropertyChanged(nameof(IsFullscreen));
+            OnPropertyChanged(nameof(IsMaximize));
+            
             InstallPath = EnsureMinecraftDirectory(rawPath);
             LoadLanguagePack(isEnglish);
         }
@@ -245,6 +411,8 @@ namespace MinecraftLauncher.ViewModels
             Task.Run(async () =>
             {
                 await LoadServerInfoFromManifest();
+                await LoadAvatarAsync();
+                await CheckForLauncherUpdate();
                 ScanAndHookRunningGame();
             });
         }
@@ -308,6 +476,40 @@ namespace MinecraftLauncher.ViewModels
             {
                 // IN CHI TIẾT LỖI RA MÀN HÌNH ĐỂ DEBUG
                 MessageBox.Show($"Lỗi: {ex.Message} | API: {_apiUrl}");
+            }
+        }
+
+        private async Task LoadAvatarAsync()
+        {
+            try
+            {
+                // Lấy file skin gốc từ Node.js (Thêm đuôi DateTime để phá Cache, luôn cập nhật ảnh mới nhất)
+                string skinUrl = $"{_apiUrl}/skins/{Username}.png?t={DateTime.Now.Ticks}";
+                byte[] imageData = await _httpClient.GetByteArrayAsync(skinUrl);
+
+                using (var ms = new MemoryStream(imageData))
+                {
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.StreamSource = ms;
+                    bitmap.EndInit();
+                    bitmap.Freeze();
+
+                    // THUẬT TOÁN CẮT ẢNH: Khuôn mặt của Skin Minecraft luôn nằm ở X=8, Y=8 và có kích thước 8x8 pixel
+                    var faceRect = new Int32Rect(8, 8, 8, 8);
+                    var croppedFace = new CroppedBitmap(bitmap, faceRect);
+                    croppedFace.Freeze();
+
+                    Application.Current.Dispatcher.Invoke(() => {
+                        ProfileAvatar = croppedFace;
+                    });
+                }
+            }
+            catch
+            {
+                // Nếu người chơi chưa tải Skin lên (Lỗi 404), trả về Null để hiện icon tay cầm mặc định
+                ProfileAvatar = null;
             }
         }
 
@@ -383,9 +585,10 @@ namespace MinecraftLauncher.ViewModels
                 ModsList.Clear();
                 foreach (var item in localDisplayList) ModsList.Add(item);
 
-                if (PlayButtonContent == this["btnPlaying"]) return;
+                if (_isInstalling || PlayButtonContent == this["btnPlaying"]) return;
 
                 IsPlayEnabled = true;
+                IsGameInstalled = fullyInstalled;
 
                 if (fullyInstalled)
                 {
@@ -410,8 +613,11 @@ namespace MinecraftLauncher.ViewModels
 
         private async Task ExecutePlay()
         {
+            _isInstalling = true;
             IsPlayEnabled = false;
             IsProgressVisible = true;
+            PlayButtonContent = IsGameInstalled ? this["btnChecking"] : this["btnDownloading"];
+
             try
             {
                 var path = new MinecraftPath(InstallPath);
@@ -451,26 +657,50 @@ namespace MinecraftLauncher.ViewModels
                 ConfigureSkinServer(path.BasePath);
 
                 DownloadStatus = this["msgStartGame"];
+
+                bool isGameFullscreen = IsMinecraftFullscreenEnabled();
+
                 var launchOption = new MLaunchOption
                 {
                     Session = MSession.CreateOfflineSession(Username),
                     MaximumRamMb = AllocatedRam,
                     MinimumRamMb = AllocatedRam,
-                    JVMArguments = new string[] { $"-Xms{AllocatedRam}m", $"-Xmx{AllocatedRam}m", "-XX:+UseG1GC" },
-                    ServerIp = string.IsNullOrEmpty(_serverManifest.Server_Ip) ? "127.0.0.1" : _serverManifest.Server_Ip,
-                    ServerPort = _serverManifest.Server_Port > 0 ? _serverManifest.Server_Port : 25565
+                    JVMArguments = [$"-Xms{AllocatedRam}m", $"-Xmx{AllocatedRam}m", "-XX:+UseG1GC"],
+                    ServerIp = _serverManifest.Server_Ip,
+                    ServerPort = _serverManifest.Server_Port,
+                    
+                    // 🟢 PHỤC HỒI TÍNH NĂNG FULLSCREEN THEO CẤU HÌNH CỦA NGƯỜI CHƠI
+                    FullScreen = isGameFullscreen
                 };
+
+                // 🟢 PHỤC HỒI TÍNH NĂNG MAXIMIZE KHI Ở CHẾ ĐỘ CỬA SỔ
+                if (!isGameFullscreen)
+                {
+                    launchOption.ScreenWidth = (int)SystemParameters.PrimaryScreenWidth;
+                    launchOption.ScreenHeight = (int)SystemParameters.PrimaryScreenHeight;
+                }
 
                 var process = await launcher.CreateProcessAsync(targetVersion, launchOption);
                 process.Start();
                 HookGameProcess(process);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                NotificationManager.Show(this["msgSystemError"], ex.Message);
                 IsPlayEnabled = true;
                 IsProgressVisible = false;
                 CheckInstallationStatus();
+            }
+            finally
+            {
+                _isInstalling = false; // 🟢 MỞ KHÓA GIAO DIỆN SAU KHI TẢI XONG / HOẶC LỖI
+                
+                // Nếu game không bật lên được (lỗi), quét lại trạng thái để trả nút về ban đầu
+                if (PlayButtonContent != this["btnPlaying"])
+                {
+                    IsPlayEnabled = true;
+                    IsProgressVisible = false;
+                    CheckInstallationStatus();
+                }
             }
         }
 
@@ -528,18 +758,20 @@ namespace MinecraftLauncher.ViewModels
             _activeGamePid = proc.Id;
             IsPlayEnabled = false;
             PlayButtonContent = this["btnPlaying"];
+            IsProgressVisible = false;
 
-            OnRequestCloseOrHide?.Invoke();
+            // 🟢 PHỤC HỒI: Gọi lệnh ẩn xuống khay hệ thống (System Tray) ngay khi vừa khởi động game
+            OnRequestHideToTray?.Invoke();
 
             proc.EnableRaisingEvents = true;
             proc.Exited += (s, e) =>
             {
                 _activeGamePid = -1;
                 IsProgressVisible = false;
+                PlayButtonContent = ""; 
                 CheckInstallationStatus();
-
-                Application.Current.Dispatcher.Invoke(() =>
-                {
+                
+                Application.Current.Dispatcher.Invoke(() => {
                     if (Application.Current.MainWindow is HomeWindow view) view.RestoreFromTray();
                 });
             };
@@ -611,18 +843,37 @@ namespace MinecraftLauncher.ViewModels
 
         private void ExecuteUninstallGame()
         {
-            if (NotificationManager.ShowConfirm(this["msgError"], this["msgUninstallConfirm"]))
+            if (NotificationManager.ShowConfirm(this["menuUninstall"], this["msgUninstallConfirm"]))
             {
                 try
                 {
+                    // 1. NGẮT KẾT NỐI: Phải tiêu diệt con mắt giám sát để nó nhả khóa thư mục ra
+                    if (_modsWatcher != null)
+                    {
+                        _modsWatcher.EnableRaisingEvents = false;
+                        _modsWatcher.Dispose();
+                        _modsWatcher = null;
+                    }
+
+                    // 2. Ra lệnh quét sạch dữ liệu Game
                     if (Directory.Exists(InstallPath))
                     {
                         Directory.Delete(InstallPath, true);
-                        NotificationManager.Show(this["msgSuccess"], this["msgUninstallSuccess"]);
-                        CheckInstallationStatus();
                     }
+                    
+                    NotificationManager.Show(this["msgSuccess"], this["msgUninstallSuccess"]);
                 }
-                catch (Exception ex) { NotificationManager.Show(this["msgError"], ex.Message); }
+                catch (Exception ex) 
+                { 
+                    // Bắt lỗi nếu bạn đang vô tình mở thư mục Minecraft bằng File Explorer
+                    NotificationManager.Show(this["msgError"], "Không thể xóa hoàn toàn: " + ex.Message); 
+                }
+                finally
+                {
+                    // 3. QUAN TRỌNG NHẤT: Bắt buộc giao diện phải quét lại toàn bộ trạng thái
+                    // Lúc này danh sách Mod sẽ bị xóa sạch thành dấu X đỏ và nút sẽ quay về chữ CÀI ĐẶT
+                    CheckInstallationStatus();
+                }
             }
         }
 
