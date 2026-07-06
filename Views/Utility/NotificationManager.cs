@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using MinecraftLauncher.ViewModels;
 
 namespace MinecraftLauncher
 {
@@ -17,32 +18,25 @@ namespace MinecraftLauncher
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                // 1. TÌM CỬA SỔ ĐANG ĐƯỢC HIỂN THỊ ĐỂ LÀM "CHA"
-                // Ưu tiên cửa sổ đang được thao tác, nếu không có thì lấy cửa sổ hiển thị đầu tiên
-                Window ownerWindow = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
-                
-                if (ownerWindow == null)
-                    ownerWindow = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsVisible);
+                Window ownerWindow = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+                                  ?? Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsVisible)
+                                  ?? Application.Current.MainWindow;
 
-                if (ownerWindow == null)
-                    ownerWindow = Application.Current.MainWindow;
+                // 🟢 KHỞI TẠO THEO CHUẨN MVVM
+                var viewModel = new NotificationViewModel(title, message);
+                var notification = new NotificationWindow(viewModel);
 
-                var notification = new NotificationWindow(title, message);
-
-                // 2. NẾU CÓ CỬA SỔ ĐANG MỞ -> NEO THÔNG BÁO VÀO CỬA SỔ ĐÓ
                 if (ownerWindow != null && ownerWindow.IsVisible)
                 {
                     notification.Owner = ownerWindow;
-                    notification.Topmost = false; // Tránh đè lên Chrome, Word...
+                    notification.Topmost = false;
                 }
                 else
                 {
-                    // 3. FALLBACK: Nếu Launcher bị ẩn ngầm, ép thông báo luôn nổi lên màn hình Windows
                     notification.Topmost = true;
                 }
 
                 notification.ShowInTaskbar = false;
-
                 notification.Closed += (s, e) =>
                 {
                     _openNotifications.Remove(notification);
@@ -50,8 +44,6 @@ namespace MinecraftLauncher
                 };
 
                 _openNotifications.Add(notification);
-
-                // Hiện thông báo (Opacity = 0 để lấy Height thực tế trước khi căn tọa độ)
                 notification.Show();
                 PositionNotification(notification, ownerWindow);
             });
@@ -113,8 +105,28 @@ namespace MinecraftLauncher
 
         public static bool ShowConfirm(string title, string message, string confirmText = "ĐỒNG Ý", string cancelText = "HỦY BỎ")
         {
-            // Gọi thẳng hàm tĩnh vừa viết, tự động ăn theo ngôn ngữ và thiết kế Sakura
-            return ConfirmWindow.ShowModal(title, message, confirmText, cancelText);
+            bool result = false;
+            if (Application.Current == null) return false;
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                // 🟢 KHỞI TẠO THEO CHUẨN MVVM
+                var viewModel = new ConfirmViewModel(title, message, confirmText, cancelText);
+                var dialog = new ConfirmWindow(viewModel);
+                
+                Window ownerWindow = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+                                  ?? Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsVisible)
+                                  ?? Application.Current.MainWindow;
+
+                if (ownerWindow != null && ownerWindow.IsVisible)
+                {
+                    dialog.Owner = ownerWindow;
+                }
+
+                result = dialog.ShowDialog() == true;
+            });
+
+            return result;
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
+using System.Reflection;
 using DotNetEnv;
 
 namespace MinecraftLauncher.ViewModels
@@ -97,7 +98,7 @@ namespace MinecraftLauncher.ViewModels
         public string RecoveryEmail { get => _recoveryEmail; set => SetProperty(ref _recoveryEmail, value); }
         public string RecoveryCode { get => _recoveryCode; set => SetProperty(ref _recoveryCode, value); }
 
-        private string _loadingMessageKey = "lblLoadingText";
+        private string _loadingMessageKey = "lblLoadingLogin";
         public string LoadingMessage => this[_loadingMessageKey];
 
         #endregion
@@ -118,7 +119,6 @@ namespace MinecraftLauncher.ViewModels
 
             _sessionFile = Path.Combine(_appDataFolder, "session_data.json");
             _settingsFile = Path.Combine(_appDataFolder, "launcher_settings.json");
-            _envPath = Path.Combine(_appDataFolder, ".env");
 
             InitializeEnvironment();
             LoadSettings();
@@ -135,28 +135,13 @@ namespace MinecraftLauncher.ViewModels
 
         private void InitializeEnvironment()
         {
-            var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-            if (File.Exists(_envPath))
+            var assembly = Assembly.GetExecutingAssembly();
+            using (Stream stream = assembly.GetManifestResourceStream("MinecraftLauncher.default.env"))
             {
-                Env.Load(_envPath);
-            }
-            else
-            {
-                using (Stream stream = assembly.GetManifestResourceStream("MinecraftLauncher.default.env"))
+                if (stream != null)
                 {
-                    if (stream != null)
-                    {
-                        using (StreamReader reader = new StreamReader(stream))
-                        {
-                            File.WriteAllText(_envPath, reader.ReadToEnd());
-                        }
-                    }
-                    else
-                    {
-                        File.WriteAllText(_envPath, "SERVER_API_IP=127.0.0.1\nSERVER_API_PORT=3000");
-                    }
+                    Env.Load(stream);
                 }
-                Env.Load(_envPath);
             }
             _apiUrl = $"http://{Env.GetString("SERVER_API_IP")}:{Env.GetString("SERVER_API_PORT")}/auth";
         }

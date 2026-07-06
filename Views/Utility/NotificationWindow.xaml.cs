@@ -1,41 +1,38 @@
+using System;
 using System.Windows;
-using System.Windows.Threading;
+using System.Windows.Media.Animation;
+using MinecraftLauncher.ViewModels;
 
 namespace MinecraftLauncher
 {
     public partial class NotificationWindow : Window
     {
-        private DispatcherTimer _closeTimer;
+        private bool _isClosing = false;
 
-        // Constructor mặc định (bắt buộc cho WPF)
-        public NotificationWindow()
+        public NotificationWindow(NotificationViewModel viewModel)
         {
             InitializeComponent();
+            this.DataContext = viewModel;
+
+            // Lắng nghe lệnh đóng để chạy hiệu ứng
+            viewModel.RequestClose += CloseWithAnimation;
         }
 
-        // Constructor tùy chỉnh để nạp nội dung
-        public NotificationWindow(string title, string message) : this()
+        private void CloseWithAnimation()
         {
-            txtTitle.Text = title;
-            txtMessage.Text = message;
+            if (_isClosing) return;
+            _isClosing = true;
 
-            // Khởi tạo Timer tự đóng sau 4 giây
-            _closeTimer = new DispatcherTimer();
-            _closeTimer.Interval = TimeSpan.FromSeconds(4);
-            _closeTimer.Tick += CloseTimer_Tick;
-            _closeTimer.Start();
-        }
+            // Hiệu ứng FadeOut được giữ lại ở Code-Behind vì nó là xử lý Đồ họa UI
+            var fadeOut = new DoubleAnimation
+            {
+                From = 1.0,
+                To = 0.0,
+                Duration = TimeSpan.FromSeconds(0.25)
+            };
 
-        private void CloseTimer_Tick(object sender, EventArgs e)
-        {
-            _closeTimer.Stop();
-            this.Close(); // Có thể thêm FadeOut animation trước khi close ở đây
-        }
-
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (_closeTimer != null) _closeTimer.Stop();
-            this.Close();
+            fadeOut.Completed += (s, e) => this.Close();
+            this.BeginAnimation(Window.OpacityProperty, fadeOut);
         }
     }
 }

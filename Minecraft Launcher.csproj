@@ -14,7 +14,7 @@
   <ItemGroup>
     <Resource Include="./Assets/bg.png" />
     <Resource Include="./Assets/bg_update.png" />
-    <Resource Include="./Assets/icon.jpg" />
+    <Resource Include="./Assets/icon.png" />
     <Resource Include="./Assets/icon.ico" />
     <EmbeddedResource Include="default.env" />
   </ItemGroup>

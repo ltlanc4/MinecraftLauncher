@@ -32,6 +32,39 @@ namespace MinecraftLauncher
             
             _viewModel.OnLogout += ViewModel_OnLogout;
 
+            _viewModel.RequestShowEmailOtpPanel += () =>
+            {
+                var pnlEmIn = this.FindName("pnlEmailInput") as FrameworkElement;
+                var pnlEmVer = this.FindName("pnlOtpVerify") as FrameworkElement;
+                if (pnlEmIn != null && pnlEmVer != null) PlayTransitionAnimation(pnlEmVer, pnlEmIn);
+            };
+
+            _viewModel.RequestHideEmailOtpPanel += () =>
+            {
+                var pnlEmIn = this.FindName("pnlEmailInput") as FrameworkElement;
+                var pnlEmVer = this.FindName("pnlOtpVerify") as FrameworkElement;
+                if (pnlEmIn != null && pnlEmVer != null) PlayTransitionAnimation(pnlEmIn, pnlEmVer);
+            };
+            
+            _viewModel.RequestShowPasswordOtpPanel += () =>
+            {
+                var pnlPassIn = this.FindName("pnlPasswordInput") as FrameworkElement;
+                var pnlPassVer = this.FindName("pnlPasswordOtpVerify") as FrameworkElement;
+                if (pnlPassIn != null && pnlPassVer != null) PlayTransitionAnimation(pnlPassVer, pnlPassIn);
+            };
+
+            _viewModel.RequestHidePasswordOtpPanel += () =>
+            {
+                // Dọn dẹp trắng tinh các ô mật khẩu trên giao diện khi quay lại
+                if (this.FindName("txtOldPassword") is PasswordBox t1) t1.Password = "";
+                if (this.FindName("txtNewPassword") is PasswordBox t2) t2.Password = "";
+                if (this.FindName("txtConfirmNewPassword") is PasswordBox t3) t3.Password = "";
+
+                var pnlPassIn = this.FindName("pnlPasswordInput") as FrameworkElement;
+                var pnlPassVer = this.FindName("pnlPasswordOtpVerify") as FrameworkElement;
+                if (pnlPassIn != null && pnlPassVer != null) PlayTransitionAnimation(pnlPassIn, pnlPassVer);
+            };
+
             InitializeNotifyIcon();
         }
 
@@ -133,6 +166,20 @@ namespace MinecraftLauncher
             TranslateTransform trans = new TranslateTransform(0, 15); target.RenderTransform = trans;
             target.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(250)));
             trans.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(15, 0, TimeSpan.FromMilliseconds(300)) { EasingFunction = new QuarticEase { EasingMode = EasingMode.EaseOut } });
+        }
+        private void txtOldPassword_PasswordChanged(object sender, RoutedEventArgs e)
+        {
+            if (this.DataContext is ViewModels.HomeViewModel vm) vm.OldPassword = ((PasswordBox)sender).Password;
+        }
+
+        private void txtNewPassword_PasswordChanged(object sender, RoutedEventArgs e)
+        {
+            if (this.DataContext is ViewModels.HomeViewModel vm) vm.NewPassword = ((PasswordBox)sender).Password;
+        }
+
+        private void txtConfirmNewPassword_PasswordChanged(object sender, RoutedEventArgs e)
+        {
+            if (this.DataContext is ViewModels.HomeViewModel vm) vm.ConfirmNewPassword = ((PasswordBox)sender).Password;
         }
 
         private void TopBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => this.DragMove();

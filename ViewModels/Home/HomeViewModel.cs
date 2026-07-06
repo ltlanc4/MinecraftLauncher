@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using CmlLib.Core;
 using CmlLib.Core.Auth;
+using System.Reflection;
 using DotNetEnv;
 using Microsoft.Win32;
 using System.Windows.Media;
@@ -17,7 +18,7 @@ namespace MinecraftLauncher.ViewModels
 {
     public class HomeViewModel : ViewModelBase
     {
-        private const string CURRENT_VERSION = "1.0.2";
+        private const string CURRENT_VERSION = "1.0.3";
         private static readonly HttpClient _httpClient = new HttpClient();
         private readonly string _appDataFolder;
         private readonly string _settingsFile;
@@ -47,7 +48,7 @@ namespace MinecraftLauncher.ViewModels
         private int _activeGamePid = -1;
         private Dictionary<string, string> _langDict = new Dictionary<string, string>();
         private ServerInfoResponse _serverManifest;
-        
+
         private ImageSource _profileAvatar;
 
         public event Action<string, string, string, string> OnShowConfirmDialog;
@@ -74,6 +75,13 @@ namespace MinecraftLauncher.ViewModels
 
         private bool _isInstalling = false;
 
+        // ================= QUẢN LÝ ĐỔI MẬT KHẨU =================
+        public string OldPassword { get; set; }
+        public string NewPassword { get; set; }
+        public string ConfirmNewPassword { get; set; }
+
+        private string _passwordOtp;
+        public string PasswordOtp { get => _passwordOtp; set => SetProperty(ref _passwordOtp, value); }
 
         #region Các thuộc tính Binding
         public string Username { get => _username; set => SetProperty(ref _username, value); }
@@ -90,12 +98,20 @@ namespace MinecraftLauncher.ViewModels
         public string PlayButtonContent { get => _playButtonContent; set => SetProperty(ref _playButtonContent, value); }
         public string VersionLabelText { get => _versionLabelText; set => SetProperty(ref _versionLabelText, value); }
         public string InstallPath { get => _installPath; set => SetProperty(ref _installPath, value); }
-        
+
         public ImageSource ProfileAvatar
         {
             get => _profileAvatar;
             set => SetProperty(ref _profileAvatar, value);
         }
+
+        private string _selectedSkinBase64 = "";
+
+        private ImageSource _skinPreviewImage;
+        public ImageSource SkinPreviewImage { get => _skinPreviewImage; set => SetProperty(ref _skinPreviewImage, value); }
+
+        private bool _isUploadSkinEnabled = false;
+        public bool IsUploadSkinEnabled { get => _isUploadSkinEnabled; set => SetProperty(ref _isUploadSkinEnabled, value); }
 
         public int AllocatedRam
         {
@@ -163,6 +179,12 @@ namespace MinecraftLauncher.ViewModels
         private string _updateDownloadUrl = "";
         private string _newVersionName = "";
 
+        private string _newEmail;
+        public string NewEmail { get => _newEmail; set => SetProperty(ref _newEmail, value); }
+
+        private string _emailOtp;
+        public string EmailOtp { get => _emailOtp; set => SetProperty(ref _emailOtp, value); }
+
         #endregion
 
         #region Commands
@@ -175,8 +197,22 @@ namespace MinecraftLauncher.ViewModels
         public ICommand VerifyFilesCommand { get; }
         public ICommand UninstallGameCommand { get; }
         public ICommand UpdateClientCommand { get; }
+        public ICommand SendEmailOtpCommand { get; }
+        public ICommand ConfirmEmailChangeCommand { get; }
+        public ICommand CancelEmailOtpCommand { get; }
+        public ICommand SendPasswordOtpCommand { get; }
+        public ICommand ConfirmPasswordChangeCommand { get; }
+        public ICommand CancelPasswordOtpCommand { get; }
+        public ICommand SelectSkinCommand { get; }
+        public ICommand UploadSkinCommand { get; }
         #endregion
 
+        #region Events
+        public event Action RequestShowEmailOtpPanel;
+        public event Action RequestHideEmailOtpPanel;
+        public event Action RequestShowPasswordOtpPanel;
+        public event Action RequestHidePasswordOtpPanel;
+        #endregion
         public HomeViewModel(string username)
         {
             Username = username;
@@ -196,6 +232,23 @@ namespace MinecraftLauncher.ViewModels
             VerifyFilesCommand = new RelayCommand(async (p) => await ExecuteVerifyFiles());
             UninstallGameCommand = new RelayCommand((p) => ExecuteUninstallGame());
             UpdateClientCommand = new RelayCommand((p) => ExecuteUpdateClient());
+            SendEmailOtpCommand = new RelayCommand((p) => ExecuteSendEmailOtp());
+            ConfirmEmailChangeCommand = new RelayCommand((p) => ExecuteConfirmEmailChange());
+            CancelEmailOtpCommand = new RelayCommand((p) =>
+            {
+                NewEmail = "";
+                EmailOtp = "";
+                RequestHideEmailOtpPanel?.Invoke();
+            });
+            SendPasswordOtpCommand = new RelayCommand((p) => ExecuteSendPasswordOtp());
+            ConfirmPasswordChangeCommand = new RelayCommand((p) =>ExecuteConfirmPasswordChange());
+            CancelPasswordOtpCommand = new RelayCommand((p) => 
+            {
+                PasswordOtp = "";
+                RequestHidePasswordOtpPanel?.Invoke();
+            });
+            SelectSkinCommand = new RelayCommand((p) => ExecuteSelectSkin());
+            UploadSkinCommand = new RelayCommand((p) => ExecuteUploadSkin());
 
             LoadLauncherSettings();
             InitializeAutoSync();
@@ -251,8 +304,8 @@ namespace MinecraftLauncher.ViewModels
                 var sNorm = new Version(sVer.Major, sVer.Minor, Math.Max(0, sVer.Build), Math.Max(0, sVer.Revision));
                 var cNorm = new Version(cVer.Major, cVer.Minor, Math.Max(0, cVer.Build), Math.Max(0, cVer.Revision));
 
-                if (sNorm > cNorm) return true;  
-                if (sNorm < cNorm) return false; 
+                if (sNorm > cNorm) return true;
+                if (sNorm < cNorm) return false;
 
                 string sSuffix = sParts.Length > 1 ? sParts[1] : "";
                 string cSuffix = cParts.Length > 1 ? cParts[1] : "";
@@ -282,7 +335,7 @@ namespace MinecraftLauncher.ViewModels
                     // Mở cửa sổ Updater chuyên dụng của bạn và tắt sảnh chính
                     var updater = new UpdateWindow(_updateDownloadUrl);
                     updater.Show();
-                    
+
                     if (Application.Current.MainWindow != null)
                         Application.Current.MainWindow.Close();
                 });
@@ -292,35 +345,17 @@ namespace MinecraftLauncher.ViewModels
         // ĐỌC THỦ CÔNG .ENV ĐỂ ĐẢM BẢO KHÔNG BAO GIỜ MẤT KẾT NỐI API
         private void InitializeEnvironment()
         {
-            string envPath = Path.Combine(_appDataFolder, ".env");
-
-            if (!File.Exists(envPath))
+            var assembly = Assembly.GetExecutingAssembly();
+            using (Stream stream = assembly.GetManifestResourceStream("MinecraftLauncher.default.env"))
             {
-                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-                using (Stream stream = assembly.GetManifestResourceStream("MinecraftLauncher.default.env"))
+                if (stream != null)
                 {
-                    if (stream != null)
-                    {
-                        using (StreamReader reader = new StreamReader(stream))
-                            File.WriteAllText(envPath, reader.ReadToEnd());
-                    }
-                    else File.WriteAllText(envPath, "SERVER_API_IP=127.0.0.1\nSERVER_API_PORT=3000");
+                    Env.Load(stream);
                 }
             }
 
-            Env.Load(envPath);
             string ip = Env.GetString("SERVER_API_IP");
             string port = Env.GetString("SERVER_API_PORT");
-
-            // Backup an toàn: Nếu Env lỗi, tự bóc tách file bằng tay
-            if (string.IsNullOrEmpty(ip) || string.IsNullOrEmpty(port))
-            {
-                foreach (var line in File.ReadAllLines(envPath))
-                {
-                    if (line.StartsWith("SERVER_API_IP=")) ip = line.Split('=')[1].Trim();
-                    if (line.StartsWith("SERVER_API_PORT=")) port = line.Split('=')[1].Trim();
-                }
-            }
 
             _apiUrl = $"http://{ip}:{port}";
         }
@@ -345,14 +380,16 @@ namespace MinecraftLauncher.ViewModels
                     }
                 }
             }
-            catch { }
+            catch { return false; }
             // Mặc định trả về false nếu không tìm thấy file hoặc người chơi đang tắt Fullscreen
-            return false; 
+            return false;
         }
 
         private void LoadLauncherSettings()
         {
             bool isEnglish = true;
+            _allocatedRam = 8192; // An toàn khởi tạo với 8GB RAM
+            _closeMode = 2;
             string rawPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Minecraft");
 
             if (File.Exists(_settingsFile))
@@ -363,10 +400,10 @@ namespace MinecraftLauncher.ViewModels
                     if (settings != null)
                     {
                         if (settings.TryGetValue("Language", out JsonElement lang)) isEnglish = lang.GetString() == "EN";
-                        if (settings.TryGetValue("AllocatedRam", out JsonElement ram)) _allocatedRam = ram.GetInt32();
+                        if (settings.TryGetValue("AllocatedRam", out JsonElement ram)) _allocatedRam = ram.GetInt32() <= 0 ? 8192 : ram.GetInt32();
                         if (settings.TryGetValue("CloseMode", out JsonElement mode)) _closeMode = mode.GetInt32();
                         if (settings.TryGetValue("InstallPath", out JsonElement path)) rawPath = path.GetString();
-                        
+
                         // PHỤC HỒI ĐỌC CẤU HÌNH ĐỒ HỌA
                         if (settings.TryGetValue("IsFullscreen", out JsonElement fs)) _isFullscreen = fs.GetBoolean();
                         if (settings.TryGetValue("IsMaximize", out JsonElement mx)) _isMaximize = mx.GetBoolean();
@@ -380,7 +417,7 @@ namespace MinecraftLauncher.ViewModels
             OnPropertyChanged(nameof(CloseMode));
             OnPropertyChanged(nameof(IsFullscreen));
             OnPropertyChanged(nameof(IsMaximize));
-            
+
             InstallPath = EnsureMinecraftDirectory(rawPath);
             LoadLanguagePack(isEnglish);
         }
@@ -501,7 +538,8 @@ namespace MinecraftLauncher.ViewModels
                     var croppedFace = new CroppedBitmap(bitmap, faceRect);
                     croppedFace.Freeze();
 
-                    Application.Current.Dispatcher.Invoke(() => {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
                         ProfileAvatar = croppedFace;
                     });
                 }
@@ -668,7 +706,7 @@ namespace MinecraftLauncher.ViewModels
                     JVMArguments = [$"-Xms{AllocatedRam}m", $"-Xmx{AllocatedRam}m", "-XX:+UseG1GC"],
                     ServerIp = _serverManifest.Server_Ip,
                     ServerPort = _serverManifest.Server_Port,
-                    
+
                     // 🟢 PHỤC HỒI TÍNH NĂNG FULLSCREEN THEO CẤU HÌNH CỦA NGƯỜI CHƠI
                     FullScreen = isGameFullscreen
                 };
@@ -693,7 +731,7 @@ namespace MinecraftLauncher.ViewModels
             finally
             {
                 _isInstalling = false; // 🟢 MỞ KHÓA GIAO DIỆN SAU KHI TẢI XONG / HOẶC LỖI
-                
+
                 // Nếu game không bật lên được (lỗi), quét lại trạng thái để trả nút về ban đầu
                 if (PlayButtonContent != this["btnPlaying"])
                 {
@@ -768,10 +806,11 @@ namespace MinecraftLauncher.ViewModels
             {
                 _activeGamePid = -1;
                 IsProgressVisible = false;
-                PlayButtonContent = ""; 
+                PlayButtonContent = "";
                 CheckInstallationStatus();
-                
-                Application.Current.Dispatcher.Invoke(() => {
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
                     if (Application.Current.MainWindow is HomeWindow view) view.RestoreFromTray();
                 });
             };
@@ -820,30 +859,93 @@ namespace MinecraftLauncher.ViewModels
 
         private void ExecuteOpenFolder()
         {
-            if (Directory.Exists(InstallPath)) Process.Start(new ProcessStartInfo { FileName = InstallPath, UseShellExecute = true, Verb = "open" });
+            if (Directory.Exists(InstallPath))
+            {
+                Process.Start(new ProcessStartInfo()
+                {
+                    FileName = InstallPath,
+                    UseShellExecute = true,
+                    Verb = "open"
+                });
+            }
+            else
+            {
+                NotificationManager.Show(this["msgError"], this["msgFolderNotExist"]);
+            }
         }
 
         private async Task ExecuteVerifyFiles()
         {
+            if (_serverManifest == null)
+            {
+                NotificationManager.Show(this["msgError"], this["msgLoadConfigError"]);
+                return;
+            }
+
+            // 1. Khóa giao diện, ép hiện thanh tiến trình
+            _isInstalling = true;
             IsPlayEnabled = false;
             IsProgressVisible = true;
+
             try
             {
                 var path = new MinecraftPath(InstallPath);
                 var launcher = new CMLauncher(path);
+
+                launcher.FileChanged += (e) =>
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        DownloadStatus = $"[{this["msgRestoring"]}] {e.FileName}";
+                        DownloadDetail = $"{e.ProgressedFileCount} / {e.TotalFileCount}";
+                        MaxProgressValue = e.TotalFileCount;
+                        ProgressValue = e.ProgressedFileCount;
+                        double pct = e.TotalFileCount > 0 ? ((double)e.ProgressedFileCount / e.TotalFileCount) * 100 : 0;
+                        DownloadPercentage = $"{pct:F0}%";
+                    });
+                };
+
                 string targetVersion = GetTargetVersionName();
+
+                if (targetVersion.StartsWith("fabric-loader"))
+                {
+                    string versionDir = Path.Combine(path.Versions, targetVersion);
+                    string jsonPath = Path.Combine(versionDir, targetVersion + ".json");
+                    if (!File.Exists(jsonPath))
+                    {
+                        DownloadStatus = this["msgFetchFabric"];
+                        if (!Directory.Exists(versionDir)) Directory.CreateDirectory(versionDir);
+                        byte[] jsonBytes = await _httpClient.GetByteArrayAsync($"https://meta.fabricmc.net/v2/versions/loader/{_serverManifest.Version}/{_serverManifest.Loader_Version}/profile/json");
+                        await File.WriteAllBytesAsync(jsonPath, jsonBytes);
+                    }
+                }
+
+                DownloadStatus = this["msgVerifyHash"];
                 var versionInfo = await launcher.GetVersionAsync(targetVersion);
                 await launcher.CheckAndDownloadAsync(versionInfo);
+
+                DownloadStatus = this["msgVerifyMods"];
                 await SyncModsAsync(Path.Combine(path.BasePath, "mods"));
+
                 NotificationManager.Show(this["msgSuccess"], this["msgVerifySuccess"]);
             }
-            catch (Exception ex) { NotificationManager.Show(this["msgError"], ex.Message); }
-            finally { IsProgressVisible = false; CheckInstallationStatus(); }
+            catch (Exception ex)
+            {
+                NotificationManager.Show(this["msgError"], ex.Message);
+            }
+            finally
+            {
+                // 2. Mở khóa giao diện và quét lại nút Play
+                _isInstalling = false;
+                IsPlayEnabled = true;
+                IsProgressVisible = false;
+                CheckInstallationStatus();
+            }
         }
 
         private void ExecuteUninstallGame()
         {
-            if (NotificationManager.ShowConfirm(this["menuUninstall"], this["msgUninstallConfirm"]))
+            if (NotificationManager.ShowConfirm(this["menuUninstall"], this["msgUninstallConfirm"], this["btnConfirm"], this["btnCancel"]))
             {
                 try
                 {
@@ -860,13 +962,13 @@ namespace MinecraftLauncher.ViewModels
                     {
                         Directory.Delete(InstallPath, true);
                     }
-                    
+
                     NotificationManager.Show(this["msgSuccess"], this["msgUninstallSuccess"]);
                 }
-                catch (Exception ex) 
-                { 
+                catch (Exception ex)
+                {
                     // Bắt lỗi nếu bạn đang vô tình mở thư mục Minecraft bằng File Explorer
-                    NotificationManager.Show(this["msgError"], "Không thể xóa hoàn toàn: " + ex.Message); 
+                    NotificationManager.Show(this["msgError"], "Không thể xóa hoàn toàn: " + ex.Message);
                 }
                 finally
                 {
@@ -893,11 +995,221 @@ namespace MinecraftLauncher.ViewModels
             }
         }
 
+        private async void ExecuteSendEmailOtp()
+        {
+            if (string.IsNullOrEmpty(NewEmail))
+            {
+                NotificationManager.Show(this["msgWarning"], this["msgEmailEmpty"]);
+                return;
+            }
+
+            try
+            {
+                var content = new StringContent(JsonSerializer.Serialize(new { username = Username, newEmail = NewEmail }), System.Text.Encoding.UTF8, "application/json");
+                string responseString = await (await _httpClient.PostAsync($"{_apiUrl}/auth/request-email-change", content)).Content.ReadAsStringAsync();
+
+                if (responseString.Trim().StartsWith("<")) throw new Exception(this["msgServerHtml"]);
+
+                var result = JsonSerializer.Deserialize<ServerInfoResponse>(responseString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    if (result != null && result.Success)
+                    {
+                        NotificationManager.Show(this["msgSuccess"], this["msgOtpSent"]);
+                        RequestShowEmailOtpPanel?.Invoke(); // Kích hoạt animation trượt bảng OTP lên
+                    }
+                    else
+                    {
+                        // Đảm bảo dòng này dùng this[result.Message] để tự động dò Key trong từ điển
+                        string errorCode = result?.Message ?? "msgEmailFail";
+                        NotificationManager.Show(this["msgError"], this[errorCode]);
+                    }
+                });
+            }
+            catch (Exception ex) { Application.Current.Dispatcher.Invoke(() => NotificationManager.Show(this["msgConnectionError"], ex.Message)); }
+        }
+
+        private async void ExecuteConfirmEmailChange()
+        {
+            if (string.IsNullOrEmpty(NewEmail) || string.IsNullOrEmpty(EmailOtp))
+            {
+                NotificationManager.Show(this["msgWarning"], this["msgEmailOtpEmpty"]);
+                return;
+            }
+
+            try
+            {
+                var content = new StringContent(JsonSerializer.Serialize(new { username = Username, newEmail = NewEmail, otp = EmailOtp }), System.Text.Encoding.UTF8, "application/json");
+                string responseString = await (await _httpClient.PostAsync($"{_apiUrl}/auth/change-email", content)).Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<ServerInfoResponse>(responseString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    if (result != null && result.Success)
+                    {
+                        NotificationManager.Show(this["msgSuccess"], this["msgEmailChangeSuccess"]);
+                        NewEmail = "";
+                        EmailOtp = "";
+                        RequestHideEmailOtpPanel?.Invoke(); // Kích hoạt animation quay lại
+                    }
+                    else NotificationManager.Show(this["msgError"], result?.Message ?? this["msgInvalidOtp"]);
+                });
+            }
+            catch (Exception ex) { Application.Current.Dispatcher.Invoke(() => NotificationManager.Show(this["msgConnectionError"], ex.Message)); }
+        }
+
+        private async void ExecuteSendPasswordOtp()
+        {
+            if (string.IsNullOrEmpty(OldPassword) || string.IsNullOrEmpty(NewPassword) || string.IsNullOrEmpty(ConfirmNewPassword))
+            {
+                NotificationManager.Show(this["msgWarning"], this["msgPassEmpty"]);
+                return;
+            }
+            if (NewPassword != ConfirmNewPassword)
+            {
+                NotificationManager.Show(this["msgWarning"], this["msgPassNotMatch"]);
+                return;
+            }
+
+            try
+            {
+                var content = new StringContent(System.Text.Json.JsonSerializer.Serialize(new { username = Username, oldPassword = OldPassword }), System.Text.Encoding.UTF8, "application/json");
+                string responseString = await (await _httpClient.PostAsync($"{_apiUrl}/auth/request-password-otp", content)).Content.ReadAsStringAsync();
+
+                var result = System.Text.Json.JsonSerializer.Deserialize<ServerInfoResponse>(responseString, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    if (result != null && result.Success)
+                    {
+                        NotificationManager.Show(this["msgSuccess"], this["msgOtpSent"]);
+                        RequestShowPasswordOtpPanel?.Invoke();
+                    }
+                    else
+                    {
+                        string errorCode = result?.Message ?? "msgWrongPass";
+                        NotificationManager.Show(this["msgError"], this[errorCode]);
+                    }
+                });
+            }
+            catch (Exception ex) { Application.Current.Dispatcher.Invoke(() => NotificationManager.Show(this["msgConnectionError"], ex.Message)); }
+        }
+
+        private async void ExecuteConfirmPasswordChange()
+        {
+            if (string.IsNullOrEmpty(PasswordOtp))
+            {
+                NotificationManager.Show(this["msgWarning"], this["msgEnterOtp"]);
+                return;
+            }
+
+            try
+            {
+                var content = new StringContent(System.Text.Json.JsonSerializer.Serialize(new { username = Username, otp = PasswordOtp, newPassword = NewPassword }), System.Text.Encoding.UTF8, "application/json");
+                string responseString = await (await _httpClient.PostAsync($"{_apiUrl}/auth/reset-password", content)).Content.ReadAsStringAsync();
+                var result = System.Text.Json.JsonSerializer.Deserialize<ServerInfoResponse>(responseString, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    if (result != null && result.Success)
+                    {
+                        NotificationManager.Show(this["msgSuccess"], this["msgPassChangeSuccess"]);
+                        
+                        // Cập nhật lại phiên đăng nhập (Session) tự động nếu người dùng có tick Lưu mật khẩu
+                        string sessionFile = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MinecraftLauncher", "session_data.json");
+                        if (System.IO.File.Exists(sessionFile))
+                        {
+                            try
+                            {
+                                var sDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(System.IO.File.ReadAllText(sessionFile));
+                                if (sDict != null) { 
+                                    sDict["Password"] = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(NewPassword)); 
+                                    System.IO.File.WriteAllText(sessionFile, System.Text.Json.JsonSerializer.Serialize(sDict)); 
+                                }
+                            }
+                            catch { }
+                        }
+
+                        PasswordOtp = "";
+                        RequestHidePasswordOtpPanel?.Invoke();
+                    }
+                    else
+                    {
+                        string errorCode = result?.Message ?? "msgInvalidOtp";
+                        NotificationManager.Show(this["msgError"], this[errorCode]);
+                    }
+                });
+            }
+            catch (Exception ex) { Application.Current.Dispatcher.Invoke(() => NotificationManager.Show(this["msgConnectionError"], ex.Message)); }
+        }
+
+        private void ExecuteSelectSkin()
+        {
+            var openFileDialog = new OpenFileDialog { Filter = "PNG Image (*.png)|*.png", Title = this["msgSelectSkin"] };
+            if (openFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    var bitmap = new BitmapImage(new Uri(openFileDialog.FileName));
+                    if (bitmap.PixelWidth != 64 || (bitmap.PixelHeight != 64 && bitmap.PixelHeight != 32))
+                    {
+                        NotificationManager.Show(this["msgSkinError"], this["msgSkinSize"]);
+                        return;
+                    }
+
+                    SkinPreviewImage = bitmap;
+                    _selectedSkinBase64 = Convert.ToBase64String(File.ReadAllBytes(openFileDialog.FileName));
+                    IsUploadSkinEnabled = true;
+                }
+                catch (Exception ex) { NotificationManager.Show(this["msgReadError"], ex.Message); }
+            }
+        }
+
+        private async void ExecuteUploadSkin()
+        {
+            if (string.IsNullOrEmpty(_selectedSkinBase64)) return;
+            IsUploadSkinEnabled = false;
+
+            try
+            {
+                var content = new StringContent(JsonSerializer.Serialize(new { username = Username, skinBase64 = _selectedSkinBase64 }), System.Text.Encoding.UTF8, "application/json");
+                var responseString = await (await _httpClient.PostAsync($"{_apiUrl}/auth/upload-skin", content)).Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<ServerInfoResponse>(responseString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                Application.Current.Dispatcher.Invoke(async () =>
+                {
+                    if (result != null && result.Success)
+                    {
+                        NotificationManager.Show(this["msgSuccess"], this["msgSkinSuccess"]);
+                        _selectedSkinBase64 = "";
+                        SkinPreviewImage = null;
+                        
+                        // 🟢 GỌI LẠI ĐÚNG HÀM CÓ SẴN CỦA BẠN ĐỂ CẬP NHẬT GIAO DIỆN
+                        await LoadAvatarAsync(); 
+                    }
+                    else
+                    {
+                        string errorCode = result?.Message ?? "msgSkinFail";
+                        NotificationManager.Show(this["msgError"], this[errorCode]);
+                        IsUploadSkinEnabled = true;
+                    }
+                });
+            }
+            catch (Exception ex) 
+            { 
+                Application.Current.Dispatcher.Invoke(() => {
+                    NotificationManager.Show(this["msgConnectionError"], ex.Message);
+                    IsUploadSkinEnabled = true;
+                }); 
+            }
+        }
+
         public void CloseOrExitRequested()
         {
             if (_activeGamePid != -1)
             {
-                if (NotificationManager.ShowConfirm(this["msgConfirmExitTitle"], this["msgConfirmExitDesc"]))
+                if (NotificationManager.ShowConfirm(this["msgConfirmExitTitle"], this["msgConfirmExitDesc"], this["btnConfirm"], this["btnCancel"]))
                     try { Process.GetProcessById(_activeGamePid)?.Kill(); } catch { }
                 else return;
             }
