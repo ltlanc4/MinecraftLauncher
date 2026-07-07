@@ -26,18 +26,18 @@ namespace MinecraftLauncher.ViewModels
         private string _apiUrl;
 
         private string _username;
-        private string _gameVersionText = "Đang tải...";
-        private string _totalModsText = "Đang kết nối Máy chủ...";
-        private string _downloadStatus = "...";
-        private string _downloadDetail = "0 / 0";
-        private string _downloadPercentage = "0%";
+        private string _gameVersionText;
+        private string _totalModsText;
+        private string _downloadStatus;
+        private string _downloadDetail;
+        private string _downloadPercentage;
         private double _progressValue = 0;
         private double _maxProgressValue = 100;
-        private int _allocatedRam;
+        private int _allocatedRam = 8192;
         private int _closeMode = 2;
         private string _installPath;
-        private bool _isProgressVisible = false;
-        private bool _isPlayEnabled = false;
+        private bool _isProgressVisible;
+        private bool _isPlayEnabled;
 
         // GÁN GIÁ TRỊ MẶC ĐỊNH ĐỂ NÚT PLAY KHÔNG BỊ TÀNG HÌNH
         private string _playButtonContent = "ĐANG KIỂM TRA...";
@@ -223,7 +223,7 @@ namespace MinecraftLauncher.ViewModels
 
             InitializeEnvironment();
 
-            PlayCommand = new RelayCommand(async (p) => await ExecutePlay(), (p) => IsPlayEnabled);
+            PlayCommand = new RelayCommand(async (p) => await ExecutePlay());
             ChangePathCommand = new RelayCommand((p) => ExecuteChangePath());
             ChangeLanguageCommand = new RelayCommand((p) => ExecuteChangeLanguage());
             LogoutCommand = new RelayCommand((p) => ExecuteLogout());
@@ -241,8 +241,8 @@ namespace MinecraftLauncher.ViewModels
                 RequestHideEmailOtpPanel?.Invoke();
             });
             SendPasswordOtpCommand = new RelayCommand((p) => ExecuteSendPasswordOtp());
-            ConfirmPasswordChangeCommand = new RelayCommand((p) =>ExecuteConfirmPasswordChange());
-            CancelPasswordOtpCommand = new RelayCommand((p) => 
+            ConfirmPasswordChangeCommand = new RelayCommand((p) => ExecuteConfirmPasswordChange());
+            CancelPasswordOtpCommand = new RelayCommand((p) =>
             {
                 PasswordOtp = "";
                 RequestHidePasswordOtpPanel?.Invoke();
@@ -388,8 +388,6 @@ namespace MinecraftLauncher.ViewModels
         private void LoadLauncherSettings()
         {
             bool isEnglish = true;
-            _allocatedRam = 8192; // An toàn khởi tạo với 8GB RAM
-            _closeMode = 2;
             string rawPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Minecraft");
 
             if (File.Exists(_settingsFile))
@@ -582,51 +580,166 @@ namespace MinecraftLauncher.ViewModels
             catch { }
         }
 
-        public void CheckInstallationStatus()
+        // public void CheckInstallationStatus()
+        // {
+        //     if (_serverManifest == null || string.IsNullOrEmpty(_serverManifest.Version)) return;
+
+        //     var path = new MinecraftPath(InstallPath);
+        //     string targetVersion = GetTargetVersionName();
+        //     string jsonFile = Path.Combine(path.Versions, targetVersion, targetVersion + ".json");
+        //     string modsDir = Path.Combine(path.BasePath, "mods");
+
+        //     if (!Directory.Exists(modsDir)) Directory.CreateDirectory(modsDir);
+
+        //     if (_modsWatcher == null)
+        //     {
+        //         _modsWatcher = new FileSystemWatcher(modsDir) { NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite };
+        //         _modsWatcher.Created += (s, e) => Application.Current.Dispatcher.InvokeAsync(() => CheckInstallationStatus());
+        //         _modsWatcher.Deleted += (s, e) => Application.Current.Dispatcher.InvokeAsync(() => CheckInstallationStatus());
+        //         _modsWatcher.EnableRaisingEvents = true;
+        //     }
+
+        //     bool isGameCoreInstalled = File.Exists(jsonFile);
+        //     bool areModsInstalled = true;
+        //     var localDisplayList = new List<ModStatusItem>();
+
+        //     if (_serverManifest.Mods != null)
+        //     {
+        //         var localFiles = Directory.GetFiles(modsDir).Select(Path.GetFileName).ToList();
+        //         foreach (var serverMod in _serverManifest.Mods)
+        //         {
+        //             bool isInstalled = false;
+        //             string localFileName = localFiles.FirstOrDefault(f => string.Equals(f, serverMod.Name, StringComparison.OrdinalIgnoreCase));
+                    
+        //             if (!string.IsNullOrEmpty(localFileName))
+        //             {
+        //                 string localFilePath = Path.Combine(modsDir, localFileName);
+        //                 string localHash = GetFileMD5(localFilePath); 
+        //                 string serverHash = serverMod.Hash?.Trim()?.ToLowerInvariant() ?? "";
+
+        //                 // Bắt buộc Hash phải trùng (Ngoại trừ trường hợp Server không cấp Hash thì bỏ qua)
+        //                 if (string.IsNullOrEmpty(serverHash) || (!string.IsNullOrEmpty(localHash) && localHash != "err" && localHash == serverHash))
+        //                 {
+        //                     isInstalled = true;
+        //                 }
+        //             }
+
+        //             if (!isInstalled) areModsInstalled = false;
+        //             localDisplayList.Add(new ModStatusItem { FileName = serverMod.Name, IsInstalled = isInstalled });
+        //         }
+        //     }
+
+        //     bool fullyInstalled = isGameCoreInstalled && areModsInstalled;
+
+        //     Application.Current.Dispatcher.Invoke(() =>
+        //     {
+        //         ModsList.Clear();
+        //         foreach (var item in localDisplayList) ModsList.Add(item);
+
+        //         if (_isInstalling || PlayButtonContent == this["btnPlaying"]) return;
+
+        //         IsPlayEnabled = true;
+        //         IsGameInstalled = isGameCoreInstalled;
+
+        //         if (fullyInstalled)
+        //         {
+        //             PlayButtonContent = this["btnPlay"];
+        //             VersionLabelText = this["lblCurrentVersion"];
+        //         }
+        //         else
+        //         {
+        //             PlayButtonContent = isGameCoreInstalled ? this["btnUpdate"] : this["btnInstall"];
+        //             VersionLabelText = this["lblVersionToDownload"];
+        //         }
+        //     });
+        // }
+
+        private void CheckInstallationStatus()
         {
             if (_serverManifest == null || string.IsNullOrEmpty(_serverManifest.Version)) return;
 
             var path = new MinecraftPath(InstallPath);
             string targetVersion = GetTargetVersionName();
-            string jsonFile = Path.Combine(path.Versions, targetVersion, targetVersion + ".json");
-            string modsDir = Path.Combine(path.BasePath, "mods");
+            string versionFolder = Path.Combine(path.Versions, targetVersion);
+            string jsonFile = Path.Combine(versionFolder, targetVersion + ".json");
+            
+            string modsDir = Path.Combine(path.BasePath, "mods"); 
 
             if (!Directory.Exists(modsDir)) Directory.CreateDirectory(modsDir);
 
             if (_modsWatcher == null)
             {
-                _modsWatcher = new FileSystemWatcher(modsDir) { NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite };
-                _modsWatcher.Created += (s, e) => CheckInstallationStatus();
-                _modsWatcher.Deleted += (s, e) => CheckInstallationStatus();
+                if (_modsWatcher != null) { _modsWatcher.EnableRaisingEvents = false; _modsWatcher.Dispose(); }
+                _modsWatcher = new FileSystemWatcher(modsDir)
+                {
+                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite
+                };
+                _modsWatcher.Created += (s, e) => Application.Current.Dispatcher.InvokeAsync(() => { if (IsPlayEnabled) CheckInstallationStatus(); });
+                _modsWatcher.Deleted += (s, e) => Application.Current.Dispatcher.InvokeAsync(() => { if (IsPlayEnabled) CheckInstallationStatus(); });
                 _modsWatcher.EnableRaisingEvents = true;
             }
 
             bool isGameCoreInstalled = File.Exists(jsonFile);
             bool areModsInstalled = true;
-            var localDisplayList = new List<ModStatusItem>();
+            
+            if (Directory.Exists(path.Versions))
+            {
+                var obsoleteDirs = Directory.GetDirectories(path.Versions)
+                    .Where(d => !Path.GetFileName(d).Equals(targetVersion, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+            var displayList = new List<ModStatusItem>();
 
-            if (_serverManifest.Mods != null)
+            if (_serverManifest.Mods != null && _serverManifest.Mods.Count > 0)
             {
                 var localFiles = Directory.GetFiles(modsDir).Select(Path.GetFileName).ToList();
-                foreach (var serverMod in _serverManifest.Mods)
+                var serverModNames = _serverManifest.Mods.Select(m => m.Name).ToList();
+
+                // 1. Cảm biến phát hiện dư file/thiếu file (Kháng lỗi chữ hoa chữ thường)
+                if (serverModNames.Except(localFiles, StringComparer.OrdinalIgnoreCase).Any() || 
+                    localFiles.Except(serverModNames, StringComparer.OrdinalIgnoreCase).Any()) 
                 {
-                    bool isModOk = localFiles.Contains(serverMod.Name, StringComparer.OrdinalIgnoreCase);
-                    if (!isModOk) areModsInstalled = false;
-                    localDisplayList.Add(new ModStatusItem { FileName = serverMod.Name, IsInstalled = isModOk });
+                    areModsInstalled = false;
+                }
+                
+                // 2. KHÔI PHỤC CẢM BIẾN QUÉT MD5 CHO TỪNG FILE
+                foreach (var serverMod in _serverManifest.Mods) 
+                {
+                    bool isInstalled = false;
+
+                    // Tìm xem dưới máy khách có file nào trùng tên không (bỏ qua hoa/thường)
+                    string localFileName = localFiles.FirstOrDefault(f => string.Equals(f, serverMod.Name, StringComparison.OrdinalIgnoreCase));
+                    
+                    if (!string.IsNullOrEmpty(localFileName))
+                    {
+                        string localFilePath = Path.Combine(modsDir, localFileName);
+                        string localHash = GetFileMD5(localFilePath); // Đọc ruột file
+                        string serverHash = serverMod.Hash?.Trim()?.ToLowerInvariant() ?? "";
+
+                        // CHỈ CÔNG NHẬN KHI MÃ MD5 CỦA MÁY KHÁCH VÀ SERVER HOÀN TOÀN TRÙNG KHỚP
+                        if (!string.IsNullOrEmpty(localHash) && localHash != "err" && localHash == serverHash)
+                        {
+                            isInstalled = true;
+                        }
+                    }
+
+                    // Nếu có 1 file sai Hash -> Ngay lập tức đánh dấu bộ Mod bị lỗi
+                    if (!isInstalled) areModsInstalled = false;
+
+                    displayList.Add(new ModStatusItem { FileName = serverMod.Name, IsInstalled = isInstalled });
                 }
             }
-
             bool fullyInstalled = isGameCoreInstalled && areModsInstalled;
 
             Application.Current.Dispatcher.Invoke(() =>
             {
                 ModsList.Clear();
-                foreach (var item in localDisplayList) ModsList.Add(item);
+                foreach (var item in displayList) ModsList.Add(item);
 
                 if (_isInstalling || PlayButtonContent == this["btnPlaying"]) return;
 
                 IsPlayEnabled = true;
-                IsGameInstalled = fullyInstalled;
+                IsGameInstalled = isGameCoreInstalled;
 
                 if (fullyInstalled)
                 {
@@ -640,6 +753,17 @@ namespace MinecraftLauncher.ViewModels
                 }
             });
         }
+        // ================= CỖ MÁY BĂM MD5 CHO FILE (CHỐNG KHÓA FILE) =================
+        private string GetFileMD5(string filePath)
+        {
+            try
+            {
+                using (var md5 = System.Security.Cryptography.MD5.Create())
+                using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    return BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
+            }
+            catch { return "err"; }
+        }
 
         private string GetTargetVersionName()
         {
@@ -651,6 +775,8 @@ namespace MinecraftLauncher.ViewModels
 
         private async Task ExecutePlay()
         {
+            if (!IsPlayEnabled) return;
+
             _isInstalling = true;
             IsPlayEnabled = false;
             IsProgressVisible = true;
@@ -703,7 +829,7 @@ namespace MinecraftLauncher.ViewModels
                     Session = MSession.CreateOfflineSession(Username),
                     MaximumRamMb = AllocatedRam,
                     MinimumRamMb = AllocatedRam,
-                    JVMArguments = [$"-Xms{AllocatedRam}m", $"-Xmx{AllocatedRam}m", "-XX:+UseG1GC"],
+                    JVMArguments = [$"-Xms{AllocatedRam}m", $"-Xmx{AllocatedRam}m", "-XX:+UseG1GC", $"-Dotonashi.ws.url=ws://{Env.GetString("SERVER_API_IP")}:{Env.GetString("SERVER_API_PORT")}"],
                     ServerIp = _serverManifest.Server_Ip,
                     ServerPort = _serverManifest.Server_Port,
 
@@ -742,35 +868,143 @@ namespace MinecraftLauncher.ViewModels
             }
         }
 
+        // private async Task SyncModsAsync(string modsDirectory)
+        // {
+        //     if (_serverManifest?.Mods == null) return;
+        //     var localFiles = Directory.GetFiles(modsDirectory).Select(Path.GetFileName).ToList();
+        //     var modsToDownload = new List<string>();
+
+        //     // Quét MD5 và Dọn file rác/hỏng
+        //     foreach (var local in localFiles)
+        //     {
+        //         var serverMod = _serverManifest.Mods.FirstOrDefault(m => string.Equals(m.Name, local, StringComparison.OrdinalIgnoreCase));
+        //         string fullPath = Path.Combine(modsDirectory, local);
+
+        //         if (serverMod == null) { try { File.Delete(fullPath); } catch { } }
+        //         else
+        //         {
+        //             string localHash = GetFileMD5(fullPath);
+        //             string serverHash = serverMod.Hash?.Trim()?.ToLowerInvariant() ?? "";
+                    
+        //             // Xóa file đi nếu mã Hash khác với Server để tải lại
+        //             if (!string.IsNullOrEmpty(serverHash) && !string.IsNullOrEmpty(localHash) && localHash != "err" && localHash != serverHash)
+        //             {
+        //                 try { File.Delete(fullPath); } catch { }
+        //                 modsToDownload.Add(serverMod.Name);
+        //             }
+        //         }
+        //     }
+
+        //     // Tìm file bị thiếu
+        //     var currentFiles = Directory.GetFiles(modsDirectory).Select(Path.GetFileName).ToList();
+        //     var missingMods = _serverManifest.Mods.Where(m => !currentFiles.Contains(m.Name, StringComparer.OrdinalIgnoreCase)).ToList();
+
+        //     foreach (var m in missingMods) if (!modsToDownload.Contains(m.Name)) modsToDownload.Add(m.Name);
+
+        //     // Tải file xuống
+        //     if (modsToDownload.Count > 0)
+        //     {
+        //         Application.Current.Dispatcher.Invoke(() => { MaxProgressValue = modsToDownload.Count; ProgressValue = 0; });
+        //         for (int i = 0; i < modsToDownload.Count; i++)
+        //         {
+        //             string modName = modsToDownload[i];
+        //             DownloadStatus = string.Format(this["msgDownloadingMod"], modName);
+        //             DownloadDetail = $"{i + 1} / {modsToDownload.Count}";
+        //             DownloadPercentage = $"{(double)(i + 1) / modsToDownload.Count * 100:F0}%";
+
+        //             try
+        //             {
+        //                 byte[] fileData = await _httpClient.GetByteArrayAsync($"{_apiUrl}/mods/{modName}?t={DateTime.Now.Ticks}");
+        //                 await File.WriteAllBytesAsync(Path.Combine(modsDirectory, modName), fileData);
+        //             }
+        //             catch (Exception ex)
+        //             {
+        //                 // 🟢 NẾU SERVER TỪ CHỐI TẢI (404/500), NÓ SẼ HÉT LÊN MÀN HÌNH ĐỂ BẠN BIẾT
+        //                 Application.Current.Dispatcher.Invoke(() => MessageBox.Show($"Không thể tải Mod: {modName}\nLỗi từ API Server: {ex.Message}", "Lỗi Tải File"));
+        //             }
+        //             ProgressValue = i + 1;
+        //         }
+        //     }
+        // }
+
         private async Task SyncModsAsync(string modsDirectory)
         {
-            if (_serverManifest?.Mods == null) return;
-            var localFiles = Directory.GetFiles(modsDirectory).Select(Path.GetFileName).ToList();
+            if (_serverManifest == null || _serverManifest.Mods == null || _serverManifest.Mods.Count == 0) return;
+            if (!Directory.Exists(modsDirectory)) Directory.CreateDirectory(modsDirectory);
 
-            foreach (var local in localFiles)
+            var localFiles = Directory.GetFiles(modsDirectory).Select(Path.GetFileName).ToList();
+            var serverMods = _serverManifest.Mods;
+            var modsToDownload = new List<string>();
+
+            // ==========================================================
+            // BƯỚC 1: QUÉT SÂU - VỪA DỌN FILE RÁC, VỪA LỌC HASH MD5
+            // ==========================================================
+            foreach (var localFile in localFiles)
             {
-                if (!_serverManifest.Mods.Any(m => string.Equals(m.Name, local, StringComparison.OrdinalIgnoreCase)))
-                    try { File.Delete(Path.Combine(modsDirectory, local)); } catch { }
+                var serverMod = serverMods.FirstOrDefault(m => string.Equals(m.Name, localFile, StringComparison.OrdinalIgnoreCase));
+                string fullPath = Path.Combine(modsDirectory, localFile);
+
+                if (serverMod == null)
+                {
+                    // Nếu Server không có file này -> Đây là file rác -> Xóa
+                    try { File.Delete(fullPath); } catch { }
+                }
+                else
+                {
+                    // Nếu trùng tên -> Đưa vào máy quét X-Quang MD5
+                    string localHash = GetFileMD5(fullPath);
+                    string serverHash = serverMod.Hash?.Trim()?.ToLowerInvariant() ?? "";
+
+                    // Nếu mã Hash lệch nhau (nghĩa là ruột file đã bị thay đổi)
+                    if (!string.IsNullOrEmpty(localHash) && localHash != "err" && localHash != serverHash)
+                    {
+                        // Xóa cặn bã file cũ đi và ghi tên nó vào sổ chờ tải lại
+                        try { File.Delete(fullPath); } catch { }
+                        modsToDownload.Add(serverMod.Name);
+                    }
+                }
             }
 
-            var currentFiles = Directory.GetFiles(modsDirectory).Select(Path.GetFileName).ToList();
-            var missingMods = _serverManifest.Mods.Where(m => !currentFiles.Contains(m.Name, StringComparer.OrdinalIgnoreCase)).ToList();
+            // ==========================================================
+            // BƯỚC 2: RÀ SOÁT - TÌM NHỮNG FILE HOÀN TOÀN CHƯA CÓ TRONG MÁY
+            // ==========================================================
+            // Cập nhật lại danh sách file trong máy sau khi đã dọn dẹp ở Bước 1
+            var validLocalFiles = Directory.GetFiles(modsDirectory).Select(Path.GetFileName).ToList();
+            var serverModNames = serverMods.Select(m => m.Name).ToList();
 
-            if (missingMods.Count > 0)
+            var missingFiles = serverModNames.Except(validLocalFiles, StringComparer.OrdinalIgnoreCase).ToList();
+            foreach (var missing in missingFiles)
             {
-                Application.Current.Dispatcher.Invoke(() => { MaxProgressValue = missingMods.Count; ProgressValue = 0; });
-                for (int i = 0; i < missingMods.Count; i++)
+                if (!modsToDownload.Contains(missing))
                 {
-                    DownloadStatus = string.Format(this["msgDownloadingMod"], missingMods[i].Name);
-                    DownloadDetail = $"{i + 1} / {missingMods.Count}";
-                    DownloadPercentage = $"{(double)(i + 1) / missingMods.Count * 100:F0}%";
+                    modsToDownload.Add(missing);
+                }
+            }
+
+            // ==========================================================
+            // BƯỚC 3: TIẾN HÀNH TẢI CHÍNH XÁC NHỮNG FILE BỊ THIẾU / HỎNG
+            // ==========================================================
+
+            if (modsToDownload.Count > 0)
+            {
+                Application.Current.Dispatcher.Invoke(() => { MaxProgressValue = modsToDownload.Count; ProgressValue = 0; });
+                for (int i = 0; i < modsToDownload.Count; i++)
+                {
+                    string modName = modsToDownload[i];
+                    DownloadStatus = string.Format(this["msgDownloadingMod"], modName);
+                    DownloadDetail = $"{i + 1} / {modsToDownload.Count}";
+                    DownloadPercentage = $"{(double)(i + 1) / modsToDownload.Count * 100:F0}%";
 
                     try
                     {
-                        byte[] fileData = await _httpClient.GetByteArrayAsync($"{_apiUrl}/mods/{missingMods[i].Name}?t={DateTime.Now.Ticks}");
-                        await File.WriteAllBytesAsync(Path.Combine(modsDirectory, missingMods[i].Name), fileData);
+                        byte[] fileData = await _httpClient.GetByteArrayAsync($"{_apiUrl}/mods/{modName}?t={DateTime.Now.Ticks}");
+                        await File.WriteAllBytesAsync(Path.Combine(modsDirectory, modName), fileData);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        // 🟢 NẾU SERVER TỪ CHỐI TẢI (404/500), NÓ SẼ HÉT LÊN MÀN HÌNH ĐỂ BẠN BIẾT
+                        Application.Current.Dispatcher.Invoke(() => MessageBox.Show($"Không thể tải Mod: {modName}\nLỗi từ API Server: {ex.Message}", "Lỗi Tải File"));
+                    }
                     ProgressValue = i + 1;
                 }
             }
@@ -1115,7 +1349,7 @@ namespace MinecraftLauncher.ViewModels
                     if (result != null && result.Success)
                     {
                         NotificationManager.Show(this["msgSuccess"], this["msgPassChangeSuccess"]);
-                        
+
                         // Cập nhật lại phiên đăng nhập (Session) tự động nếu người dùng có tick Lưu mật khẩu
                         string sessionFile = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MinecraftLauncher", "session_data.json");
                         if (System.IO.File.Exists(sessionFile))
@@ -1123,9 +1357,10 @@ namespace MinecraftLauncher.ViewModels
                             try
                             {
                                 var sDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(System.IO.File.ReadAllText(sessionFile));
-                                if (sDict != null) { 
-                                    sDict["Password"] = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(NewPassword)); 
-                                    System.IO.File.WriteAllText(sessionFile, System.Text.Json.JsonSerializer.Serialize(sDict)); 
+                                if (sDict != null)
+                                {
+                                    sDict["Password"] = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(NewPassword));
+                                    System.IO.File.WriteAllText(sessionFile, System.Text.Json.JsonSerializer.Serialize(sDict));
                                 }
                             }
                             catch { }
@@ -1184,9 +1419,9 @@ namespace MinecraftLauncher.ViewModels
                         NotificationManager.Show(this["msgSuccess"], this["msgSkinSuccess"]);
                         _selectedSkinBase64 = "";
                         SkinPreviewImage = null;
-                        
+
                         // 🟢 GỌI LẠI ĐÚNG HÀM CÓ SẴN CỦA BẠN ĐỂ CẬP NHẬT GIAO DIỆN
-                        await LoadAvatarAsync(); 
+                        await LoadAvatarAsync();
                     }
                     else
                     {
@@ -1196,12 +1431,13 @@ namespace MinecraftLauncher.ViewModels
                     }
                 });
             }
-            catch (Exception ex) 
-            { 
-                Application.Current.Dispatcher.Invoke(() => {
+            catch (Exception ex)
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
                     NotificationManager.Show(this["msgConnectionError"], ex.Message);
                     IsUploadSkinEnabled = true;
-                }); 
+                });
             }
         }
 

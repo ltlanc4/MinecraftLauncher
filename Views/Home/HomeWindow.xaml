@@ -1599,7 +1599,8 @@
 
                                                         <Button Content="{Binding PlayButtonContent}"
                                                                         Command="{Binding PlayCommand}"
-                                                                        Grid.Column="0">
+                                                                        Grid.Column="0"
+                                                                        IsEnabled="{Binding IsPlayEnabled}">
                                                                 <Button.Style>
                                                                         <Style TargetType="Button"
                                                                                         BasedOn="{StaticResource PlayButton}">
@@ -1629,7 +1630,9 @@
                                                         <Button Content="≡"
                                                                         Grid.Column="1"
                                                                         Width="55"
-                                                                        Click="btnGameMenu_Click">
+                                                                        Click="btnGameMenu_Click"
+                                                                        Visibility="{Binding IsGameInstalled, Converter={StaticResource BoolToVisConverter}}"
+                                                                        IsEnabled="{Binding IsPlayEnabled}">
                                                                 <Button.Style>
                                                                         <Style TargetType="Button"
                                                                                         BasedOn="{StaticResource PlayButton}">
