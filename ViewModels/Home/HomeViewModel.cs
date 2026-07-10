@@ -76,6 +76,8 @@ namespace MinecraftLauncher.ViewModels
         private bool _isInstalling = false;
         private bool _isCheckingStatus = false;
 
+        private string _appVersionLabelText;
+
         // ================= QUẢN LÝ ĐỔI MẬT KHẨU =================
         public string OldPassword { get; set; }
         public string NewPassword { get; set; }
@@ -101,6 +103,7 @@ namespace MinecraftLauncher.ViewModels
         public string VersionLabelText { get => _versionLabelText; set => SetProperty(ref _versionLabelText, value); }
         public string InstallPath { get => _installPath; set => SetProperty(ref _installPath, value); }
         public string AppCurrentVersion => CURRENT_VERSION;
+        public string AppVersionLabelText { get => _appVersionLabelText; set => SetProperty(ref _appVersionLabelText, value); }
 
         public ImageSource ProfileAvatar
         {
@@ -454,6 +457,8 @@ namespace MinecraftLauncher.ViewModels
             // Cập nhật lại các biến mặc định sau khi đã nạp ngôn ngữ
             VersionLabelText = this["lblVersionToDownload"];
             PlayButtonContent = this["btnChecking"];
+            AppVersionLabelText = this["lblLauncherVersion"];
+
             Task.Run(async () =>
             {
                 await LoadServerInfoFromManifest();

@@ -1412,21 +1412,6 @@
                                         <Grid>
                                                 <StackPanel x:Name="pnlSettingsGeneral"
                                                             Visibility="Visible">
-                                                        <StackPanel Orientation="Horizontal"
-                                                                        Margin="0,15,0,0">
-                                                                <TextBlock x:Name="lblLauncherVersion"
-                                                                           Text="Phiên bản Launcher:"
-                                                                           Foreground="#AAAAAA"
-                                                                           FontSize="14"
-                                                                           VerticalAlignment="Center"/>
-
-                                                                <TextBlock Text="{Binding AppCurrentVersion}"
-                                                                           Foreground="#4ADE80"
-                                                                           FontWeight="Bold"
-                                                                           FontSize="14"
-                                                                           Margin="8,0,0,0"
-                                                                           VerticalAlignment="Center"/>
-                                                        </StackPanel>
                                                         <TextBlock Text="{Binding Lang[lblSettingsGeneralTitle]}"
                                                                    Foreground="#F36895"
                                                                    FontSize="22"
@@ -1436,6 +1421,7 @@
                                                                    Foreground="#BFA6C4"
                                                                    FontSize="14"
                                                                    Margin="0,0,0,8"/>
+
                                                         <Button Content="{Binding Lang[btnChangeLanguage]}"
                                                                 Command="{Binding ChangeLanguageCommand}"
                                                                 Style="{StaticResource ProfileSecondaryActionButton}"
@@ -1469,6 +1455,21 @@
                                                                 Style="{StaticResource ProfileCancelButton}"
                                                                 HorizontalAlignment="Left"
                                                                 Width="300"/>
+
+                                                        <StackPanel Orientation="Horizontal"
+                                                                    Margin="0,15,0,0">
+                                                                <TextBlock Text="{Binding AppVersionLabelText}"
+                                                                           Foreground="#AAAAAA"
+                                                                           FontSize="14"
+                                                                           VerticalAlignment="Center"/>
+
+                                                                <TextBlock Text="{Binding AppCurrentVersion}"
+                                                                           Foreground="#F36895"
+                                                                           FontWeight="Bold"
+                                                                           FontSize="14"
+                                                                           Margin="8,0,0,0"
+                                                                           VerticalAlignment="Center"/>
+                                                        </StackPanel>
                                                 </StackPanel>
 
                                                 <StackPanel x:Name="pnlSettingsGraphics"
