@@ -261,7 +261,6 @@ namespace MinecraftLauncher.ViewModels
         {
             try
             {
-                // Gọi đúng API Endpoint của bạn
                 HttpResponseMessage response = await _httpClient.GetAsync($"{_apiUrl}/auth/launcher-version");
                 if (response.IsSuccessStatusCode)
                 {
@@ -270,16 +269,15 @@ namespace MinecraftLauncher.ViewModels
 
                     if (updateInfo != null && !string.IsNullOrEmpty(updateInfo.Version))
                     {
-                        updateInfo.Version = updateInfo.Version.Replace(".zip", "", StringComparison.OrdinalIgnoreCase);
+                        string cleanServerVersion = Path.GetFileNameWithoutExtension(updateInfo.Version);
 
-                        if (IsServerVersionNewer(updateInfo.Version, CURRENT_VERSION))
+                        if (IsServerVersionNewer(cleanServerVersion, CURRENT_VERSION))
                         {
                             Application.Current.Dispatcher.Invoke(() =>
                             {
-                                // Bật cờ cho nút Update hiện lên
                                 IsUpdateAvailable = true;
                                 _updateDownloadUrl = updateInfo.DownloadUrl;
-                                _newVersionName = updateInfo.Version;
+                                _newVersionName = cleanServerVersion;
                             });
                         }
                     }
@@ -293,31 +291,41 @@ namespace MinecraftLauncher.ViewModels
         {
             if (string.IsNullOrWhiteSpace(serverVer) || string.IsNullOrWhiteSpace(clientVer)) return false;
 
-            serverVer = serverVer.TrimStart('v', 'V').Trim();
-            clientVer = clientVer.TrimStart('v', 'V').Trim();
+            // 🟢 BƯỚC 1: XÓA SẠCH KHOẢNG TRẮNG, CHỮ V VÀ CHUYỂN VỀ CHỮ THƯỜNG ĐỂ CHỐNG LỖI CÚ PHÁP
+            serverVer = serverVer.Replace(" ", "").TrimStart('v', 'V').ToLowerInvariant();
+            clientVer = clientVer.Replace(" ", "").TrimStart('v', 'V').ToLowerInvariant();
 
-            if (string.Equals(serverVer, clientVer, StringComparison.OrdinalIgnoreCase)) return false;
+            // NẾU HOÀN TOÀN GIỐNG NHAU THÌ KHÔNG CẦN CẬP NHẬT
+            if (serverVer == clientVer) return false;
 
             string[] sParts = serverVer.Split(new char[] { '-' }, 2);
             string[] cParts = clientVer.Split(new char[] { '-' }, 2);
 
-            if (Version.TryParse(sParts[0], out Version sVer) && Version.TryParse(cParts[0], out Version cVer))
+            // 🟢 BƯỚC 2: CỨU CÁNH NẾU VERSION.TRYPARSE THẤT BẠI
+            if (!Version.TryParse(sParts[0], out Version sVer) || !Version.TryParse(cParts[0], out Version cVer))
             {
-                var sNorm = new Version(sVer.Major, sVer.Minor, Math.Max(0, sVer.Build), Math.Max(0, sVer.Revision));
-                var cNorm = new Version(cVer.Major, cVer.Minor, Math.Max(0, cVer.Build), Math.Max(0, cVer.Revision));
-
-                if (sNorm > cNorm) return true;
-                if (sNorm < cNorm) return false;
-
-                string sSuffix = sParts.Length > 1 ? sParts[1] : "";
-                string cSuffix = cParts.Length > 1 ? cParts[1] : "";
-
-                if (sSuffix != "" && cSuffix == "") return true;
-                if (sSuffix == "" && cSuffix != "") return false;
-
-                return string.Compare(sSuffix, cSuffix, StringComparison.OrdinalIgnoreCase) > 0;
+                return serverVer != clientVer;
             }
-            return serverVer != clientVer;
+
+            var sNorm = new Version(sVer.Major, sVer.Minor, Math.Max(0, sVer.Build), Math.Max(0, sVer.Revision));
+            var cNorm = new Version(cVer.Major, cVer.Minor, Math.Max(0, cVer.Build), Math.Max(0, cVer.Revision));
+
+            // 🟢 BƯỚC 3: SO SÁNH SỐ LÕI TRƯỚC (Ví dụ: 1.0.4 > 1.0.3)
+            if (sNorm > cNorm) return true;
+            if (sNorm < cNorm) return false;
+
+            // 🟢 BƯỚC 4: NẾU SỐ LÕI BẰNG NHAU, BẮT ĐẦU SO SÁNH HẬU TỐ (HOTFIX)
+            string sSuffix = sParts.Length > 1 ? sParts[1] : "";
+            string cSuffix = cParts.Length > 1 ? cParts[1] : "";
+
+            // Server có hotfix, Client là bản gốc -> Update
+            if (sSuffix != "" && cSuffix == "") return true;
+
+            // Server là bản gốc, Client lại đang chạy bản hotfix -> Không Update
+            if (sSuffix == "" && cSuffix != "") return false;
+
+            // Cả 2 đều có hotfix (ví dụ: hotfix1 vs hotfix2) -> Đọ theo bảng chữ cái anphabet
+            return string.Compare(sSuffix, cSuffix, StringComparison.OrdinalIgnoreCase) > 0;
         }
 
         // 3. HÀNH ĐỘNG KHI NGƯỜI CHƠI BẤM NÚT CẬP NHẬT
