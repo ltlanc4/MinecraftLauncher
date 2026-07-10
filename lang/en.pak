@@ -133,6 +133,7 @@
   "radSubSetGraphics": "Graphics",
   "lblSettingsGeneralTitle": "GENERAL SETTINGS",
   "lblSettingsGraphicsTitle": "GRAPHICS SETTINGS",
+  "lblLauncherVersion": "Launcher Version:",
   "btnUpdateClient": "⬇ UPDATE",
   "msgUpdateAvailableTitle": "UPDATE AVAILABLE",
   "msgUpdateAvailableDesc": "A new Launcher version ({0}) is available. Do you want to update now to experience new features?",

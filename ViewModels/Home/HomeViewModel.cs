@@ -100,6 +100,7 @@ namespace MinecraftLauncher.ViewModels
         public string PlayButtonContent { get => _playButtonContent; set => SetProperty(ref _playButtonContent, value); }
         public string VersionLabelText { get => _versionLabelText; set => SetProperty(ref _versionLabelText, value); }
         public string InstallPath { get => _installPath; set => SetProperty(ref _installPath, value); }
+        public string AppCurrentVersion => CURRENT_VERSION;
 
         public ImageSource ProfileAvatar
         {
