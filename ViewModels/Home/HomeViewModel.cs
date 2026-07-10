@@ -18,7 +18,7 @@ namespace MinecraftLauncher.ViewModels
 {
     public class HomeViewModel : ViewModelBase
     {
-        private const string CURRENT_VERSION = "1.0.3";
+        private const string CURRENT_VERSION = "1.0.3-hotfix";
         private static readonly HttpClient _httpClient = new HttpClient();
         private readonly string _appDataFolder;
         private readonly string _settingsFile;
